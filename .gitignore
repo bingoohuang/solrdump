@@ -5,3 +5,4 @@ solrdump*.rpm
 /packaging/deb/solrdump/usr/*
 /tmp
 /*.ndj
+/.idea
