@@ -1,4 +1,4 @@
-module github.com/bingoohuang/solrdump
+module github.com/gobars/solrdump
 
 go 1.12
 

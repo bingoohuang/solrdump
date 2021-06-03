@@ -10,8 +10,8 @@ also [efficient deep paging with cursors](https://solr.pl/en/2014/03/10/solr-4-7
 
 ## Installation
 
-1. Via debian or rpm [package](https://github.com/bingoohuang/solrdump/releases).
-2. Or via go tool: `go install github.com/bingoohuang/solrdump@latest`
+1. Via debian or rpm [package](https://github.com/gobars/solrdump/releases).
+2. Or via go tool: `go install github.com/gobars/solrdump@latest`
 
 ## Features
 

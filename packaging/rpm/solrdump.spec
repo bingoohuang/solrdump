@@ -1,13 +1,13 @@
 Summary:    Dump SOLR fields efficiently with cursors.
 Name:       solrdump
-Version:    0.1.6
+Version:    0.1.1
 Release:    0
 License:    GPL
 BuildArch:  x86_64
 BuildRoot:  %{_tmppath}/%{name}-build
 Group:      System/Base
 Vendor:     Leipzig University Library, https://www.ub.uni-leipzig.de
-URL:        https://github.com/bingoohuang/solrdump
+URL:        https://github.com/gobars/solrdump
 
 %description
 
