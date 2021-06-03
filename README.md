@@ -45,7 +45,7 @@ $ solrdump -server 192.168.126.16:8983/solr/zz -max 3
 2. [solr cursor select query](https://github.com/frizner/glsolr)
 3. [frizner/solrdump](https://github.com/frizner/solrdump)
 
-## Pagination+of+Results
+## Pagination of Results
 
 * https://cwiki.apache.org/confluence/display/solr/Pagination+of+Results
 

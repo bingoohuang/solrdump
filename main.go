@@ -79,7 +79,7 @@ func main() {
 func (a App) createQuery() url.Values {
 	v := url.Values{}
 	v.Set("q", a.Q)
-	v.Set("sort", "id asc")
+	v.Set("sort", "id")
 	v.Set("rows", fmt.Sprintf("%d", a.Rows))
 	v.Set("fl", "")
 	v.Set("wt", "json")
@@ -95,12 +95,8 @@ func (a *App) Dump(link string) string {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Println("failed to fetch r body for debugging")
-		}
-		log.Printf("r body (%d): %s", len(b), string(b))
-		log.Fatal(resp.Status)
+		b, _ := ioutil.ReadAll(resp.Body)
+		log.Fatalf("resp status: %d body (%d): %s", resp.Status, len(b), string(b))
 	}
 
 	var r Response
