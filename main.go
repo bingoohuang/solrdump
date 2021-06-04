@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/rest"
@@ -24,22 +26,27 @@ Usage of %s (%s):
   -rows int      Number of rows returned per request (default 100)
   -server string SOLR server with index name, eg. localhost:8983/solr/example
   -version       Show version and exit
-  -remove-fields field names to remove
+  -remove-fields Remove fields, _version_ defaulted
+  -output        Output file, or http url
+  -v             Verbose, -vv -vvv
 `, os.Args[0], a.VersionInfo())
 }
-func (App) VersionInfo() string { return "0.1.1" }
+func (App) VersionInfo() string { return "0.1.2" }
 
 type App struct {
-	Server       string   `usage:"SOLR server with index name, eg. localhost:8983/solr/example" required:"true"`
-	Q            string   `val:"*:*" usage:"SOLR query"`
-	Max          int      `val:"100" usage:"Max number of rows"`
-	Rows         int      `val:"100" usage:"Number of rows returned per request"`
-	Version      bool     `usage:"Show version and exit"`
-	RemoveFields []string `usage:"Remove fields, _version_ defaulted"`
+	Server       string `required:"true"`
+	Q            string `val:"*:*"`
+	Max          int    `val:"100"`
+	Rows         int    `val:"100"`
+	Version      bool
+	RemoveFields []string
+	Output       []string
+	Verbose      int `flag:"v" count:"true"`
 
-	baseURL string
-	query   url.Values
-	total   int
+	baseURL  string
+	query    url.Values
+	total    int
+	outputFn func(doc []byte)
 }
 
 func (a *App) PostProcess() {
@@ -57,6 +64,32 @@ func (a *App) PostProcess() {
 
 	if len(a.RemoveFields) == 0 {
 		a.RemoveFields = []string{"_version_"}
+	}
+
+	if len(a.Output) == 0 {
+		a.outputFn = func(doc []byte) {
+			fmt.Println(string(doc))
+		}
+	} else {
+		uri, err := rest.FixURI(a.Output[0])
+		if err != nil {
+			log.Fatalf("output %s, err: %v", a.Output[0], err)
+		}
+
+		a.outputFn = func(doc []byte) {
+			start := time.Now()
+			resp, err := pester.Post(uri, "application/json; charset=utf-8", bytes.NewReader(doc))
+			cost := time.Since(start)
+			if err != nil {
+				log.Printf("sent to %s error %v", uri, err)
+			} else if a.Verbose >= 2 {
+				body, _ := rest.ReadCloseBody(resp)
+				log.Printf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body)
+			} else if a.Verbose >= 1 {
+				rest.DiscardCloseBody(resp)
+				log.Printf("sent cost: %s status: %d", cost, resp.StatusCode)
+			}
+		}
 	}
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -119,7 +152,7 @@ func (a *App) Dump(link string) string {
 		for _, fl := range a.RemoveFields {
 			doc, _ = jj.DeleteBytes(doc, fl, jj.SetOptions{ReplaceInPlace: true})
 		}
-		fmt.Println(string(doc))
+		a.outputFn(doc)
 	}
 
 	a.total += len(r.Response.Docs)

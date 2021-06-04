@@ -20,15 +20,18 @@ also [efficient deep paging with cursors](https://solr.pl/en/2014/03/10/solr-4-7
 ## Usage
 
 ```shell
-Usage of solrdump (0.1.1):
+Usage of solrdump (0.1.2):
   -max int       Max number of rows (default 100)
   -q string      SOLR query (default "*:*")
   -rows int      Number of rows returned per request (default 100)
   -server string SOLR server with index name, eg. localhost:8983/solr/example
   -version       Show version and exit
+  -remove-fields Remove fields, _version_ defaulted
+  -output        Output file, or http url
+  -v             Verbose, -v -vv -vvv
 ```
 
-Export id and title field for all documents:
+## Print docs
 
 ```shell
 $ solrdump -server 192.168.126.16:8983/solr/zz -max 3          
@@ -37,6 +40,16 @@ $ solrdump -server 192.168.126.16:8983/solr/zz -max 3
 {"dataType":"MANUAL","id":"00004d53-d76d-43c3-906d-90ff475bd1a2","createdDate":"2021-05-10T08:14:14Z"}
 {"dataType":"MANUAL","id":"000070fe-309f-4755-998e-2445cc66ef9f","createdDate":"2021-05-10T08:14:14Z"}
 2021/06/03 17:57:50 fetched 3/509309 docs
+```
+
+### Write to elastic search
+
+```sh
+➜  500px solrdump -server 192.168.126.16:8983/solr/licenseIndex -max 3 -output 192.168.126.5:9202/bench/zz -v
+2021/06/04 13:08:02 http://192.168.126.16:8983/solr/licenseIndex/select?cursorMark=%2A&fl=&q=%2A%3A%2A&rows=3&sort=id+asc&wt=json
+2021/06/04 13:08:03 sent cost: 1.020677367s status: 201
+2021/06/04 13:08:03 sent cost: 14.077046ms status: 201
+2021/06/04 13:08:03 sent cost: 9.916851ms status: 201
 ```
 
 ## Resources
