@@ -63,14 +63,14 @@ func main() {
 			log.Println(link)
 		}
 
-		if cursorMark := app.Dump(link); cursorMark == app.CursorMark() {
+		if cursor := app.Dump(link); cursor == app.Cursor() {
 			break
 		} else {
-			app.SetCursorMark(cursorMark)
+			app.SetCursor(cursor)
 		}
 	}
 
-	log.Printf("process rate %f docs/second", float64(app.total)/time.Since(start).Seconds())
+	log.Printf("process rate %f docs/s", float64(app.total)/time.Since(start).Seconds())
 }
 
 func (a App) createQuery() url.Values {
@@ -80,13 +80,15 @@ func (a App) createQuery() url.Values {
 	v.Set("rows", fmt.Sprintf("%d", a.Rows))
 	v.Set("fl", "")
 	v.Set("wt", "json")
-	v.Set("cursorMark", "*")
+	v.Set(cursorMark, "*")
 	return v
 }
 
-func (a App) CursorMark() string         { return a.query.Get("cursorMark") }
-func (a *App) SetCursorMark(mark string) { a.query.Set("cursorMark", mark) }
-func (a App) ReachedMax() bool           { return a.Max > 0 && a.total >= a.Max }
+const cursorMark = "cursorMark"
+
+func (a App) Cursor() string         { return a.query.Get(cursorMark) }
+func (a *App) SetCursor(mark string) { a.query.Set(cursorMark, mark) }
+func (a App) ReachedMax() bool       { return a.Max > 0 && a.total >= a.Max }
 
 func (a *App) Dump(link string) string {
 	resp, err := pester.Get(link)
