@@ -50,27 +50,28 @@ type App struct {
 }
 
 func main() {
-	app := &App{}
-	flagparse.Parse(app)
+	a := &App{}
+	flagparse.Parse(a)
 
 	log.Printf("started")
 	start := time.Now()
 
-	for !app.ReachedMax() {
-		link := app.CreateLink()
+	for !a.ReachedMax() {
+		link := a.CreateLink()
 
-		if app.Verbose > 0 {
+		if a.Verbose > 0 {
 			log.Println(link)
 		}
 
-		if cursor := app.Dump(link); cursor == app.Cursor() {
+		if cursor := a.Dump(link); cursor == a.Cursor() {
 			break
 		} else {
-			app.SetCursor(cursor)
+			a.SetCursor(cursor)
 		}
 	}
 
-	log.Printf("process rate %f docs/s", float64(app.total)/time.Since(start).Seconds())
+	cost := time.Since(start)
+	log.Printf("process rate %f docs/s, cost %s", float64(a.total)/cost.Seconds(), cost)
 }
 
 func (a App) createQuery() url.Values {
@@ -178,20 +179,22 @@ func (a App) CreateLink() string {
 
 // Response is a SOLR response.
 type Response struct {
-	Header struct {
-		Status int `json:"status"`
-		QTime  int `json:"QTime"`
-		Params struct {
-			Query      string `json:"q"`
-			CursorMark string `json:"cursorMark"`
-			Sort       string `json:"sort"`
-			Rows       string `json:"rows"`
-		} `json:"params"`
-	} `json:"header"`
+	//Header   Header `json:"header"`
 	Response struct {
 		NumFound int               `json:"numFound"`
 		Start    int               `json:"start"`
 		Docs     []json.RawMessage `json:"docs"` // dependent on SOLR schema
 	} `json:"response"`
 	NextCursorMark string `json:"nextCursorMark"`
+}
+
+type Header struct {
+	Status int `json:"status"`
+	QTime  int `json:"QTime"`
+	Params struct {
+		Query      string `json:"q"`
+		CursorMark string `json:"cursorMark"`
+		Sort       string `json:"sort"`
+		Rows       string `json:"rows"`
+	} `json:"params"`
 }
