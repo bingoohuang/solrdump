@@ -27,7 +27,7 @@ Usage of solrdump (0.1.2):
   -server string SOLR server with index name, eg. localhost:8983/solr/example
   -version       Show version and exit
   -remove-fields Remove fields, _version_ defaulted
-  -output        Output file, or http url
+  -output        Output file, or http url, or noop
   -v             Verbose, -v -vv -vvv
 ```
 

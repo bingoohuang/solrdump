@@ -27,11 +27,11 @@ Usage of %s (%s):
   -server string SOLR server with index name, eg. localhost:8983/solr/example
   -version       Show version and exit
   -remove-fields Remove fields, _version_ defaulted
-  -output        Output file, or http url
+  -output        Output file, or http url, or noop
   -v             Verbose, -vv -vvv
 `, os.Args[0], a.VersionInfo())
 }
-func (App) VersionInfo() string { return "0.1.2" }
+func (App) VersionInfo() string { return "0.1.3" }
 
 type App struct {
 	Server       string `required:"true"`
@@ -49,63 +49,19 @@ type App struct {
 	outputFn func(doc []byte)
 }
 
-func (a *App) PostProcess() {
-	var err error
-
-	if a.baseURL, err = rest.FixURI(a.Server); err != nil {
-		log.Fatalf("bad server %s, err: %v", a.Server, err)
-	}
-
-	if a.Max < a.Rows {
-		a.Rows = a.Max
-	}
-
-	a.query = a.createQuery()
-
-	if len(a.RemoveFields) == 0 {
-		a.RemoveFields = []string{"_version_"}
-	}
-
-	if len(a.Output) == 0 {
-		a.outputFn = func(doc []byte) {
-			fmt.Println(string(doc))
-		}
-	} else {
-		uri, err := rest.FixURI(a.Output[0])
-		if err != nil {
-			log.Fatalf("output %s, err: %v", a.Output[0], err)
-		}
-
-		a.outputFn = func(doc []byte) {
-			start := time.Now()
-			resp, err := pester.Post(uri, "application/json; charset=utf-8", bytes.NewReader(doc))
-			cost := time.Since(start)
-			if err != nil {
-				log.Printf("sent to %s error %v", uri, err)
-			} else if a.Verbose >= 2 {
-				body, _ := rest.ReadCloseBody(resp)
-				log.Printf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body)
-			} else if a.Verbose >= 1 {
-				rest.DiscardCloseBody(resp)
-				log.Printf("sent cost: %s status: %d", cost, resp.StatusCode)
-			}
-		}
-	}
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-}
-
-func (a App) CreateLink() string {
-	return fmt.Sprintf("%s/select?%s", a.baseURL, a.query.Encode())
-}
-
 func main() {
 	app := &App{}
 	flagparse.Parse(app)
 
+	log.Printf("started")
+	start := time.Now()
+
 	for !app.ReachedMax() {
 		link := app.CreateLink()
-		log.Println(link)
+
+		if app.Verbose > 0 {
+			log.Println(link)
+		}
 
 		if cursorMark := app.Dump(link); cursorMark == app.CursorMark() {
 			break
@@ -113,6 +69,8 @@ func main() {
 			app.SetCursorMark(cursorMark)
 		}
 	}
+
+	log.Printf("process rate %f docs/second", float64(app.total)/time.Since(start).Seconds())
 }
 
 func (a App) createQuery() url.Values {
@@ -128,7 +86,7 @@ func (a App) createQuery() url.Values {
 
 func (a App) CursorMark() string         { return a.query.Get("cursorMark") }
 func (a *App) SetCursorMark(mark string) { a.query.Set("cursorMark", mark) }
-func (a App) ReachedMax() bool           { return a.total >= a.Max }
+func (a App) ReachedMax() bool           { return a.Max > 0 && a.total >= a.Max }
 
 func (a *App) Dump(link string) string {
 	resp, err := pester.Get(link)
@@ -158,6 +116,62 @@ func (a *App) Dump(link string) string {
 	a.total += len(r.Response.Docs)
 	log.Printf("fetched %d/%d docs", a.total, r.Response.NumFound)
 	return r.NextCursorMark
+}
+
+func (a *App) PostProcess() {
+	var err error
+
+	if a.baseURL, err = rest.FixURI(a.Server); err != nil {
+		log.Fatalf("bad server %s, err: %v", a.Server, err)
+	}
+
+	if a.Max > 0 && a.Max < a.Rows {
+		a.Rows = a.Max
+	}
+
+	a.query = a.createQuery()
+
+	if len(a.RemoveFields) == 0 {
+		a.RemoveFields = []string{"_version_"}
+	}
+
+	a.outputFn = a.createOutputFn()
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+}
+
+func (a *App) createOutputFn() func(doc []byte) {
+	if len(a.Output) == 0 {
+		return func(doc []byte) { fmt.Println(string(doc)) }
+	}
+
+	if len(a.Output) == 1 && a.Output[0] == "noop" {
+		return func(doc []byte) {}
+	}
+
+	uri, err := rest.FixURI(a.Output[0])
+	if err != nil {
+		log.Fatalf("output %s, err: %v", a.Output[0], err)
+	}
+
+	return func(doc []byte) {
+		start := time.Now()
+		resp, err := pester.Post(uri, "application/json; charset=utf-8", bytes.NewReader(doc))
+		cost := time.Since(start)
+		if err != nil {
+			log.Printf("sent to %s error %v", uri, err)
+		} else if a.Verbose >= 2 {
+			body, _ := rest.ReadCloseBody(resp)
+			log.Printf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body)
+		} else if a.Verbose >= 1 {
+			rest.DiscardCloseBody(resp)
+			log.Printf("sent cost: %s status: %d", cost, resp.StatusCode)
+		}
+	}
+}
+
+func (a App) CreateLink() string {
+	return fmt.Sprintf("%s/select?%s", a.baseURL, a.query.Encode())
 }
 
 // Response is a SOLR response.
