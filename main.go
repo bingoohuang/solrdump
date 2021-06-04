@@ -24,16 +24,18 @@ Usage of %s (%s):
   -rows int      Number of rows returned per request (default 100)
   -server string SOLR server with index name, eg. localhost:8983/solr/example
   -version       Show version and exit
+  -remove-fields field names to remove
 `, os.Args[0], a.VersionInfo())
 }
 func (App) VersionInfo() string { return "0.1.1" }
 
 type App struct {
-	Server  string `usage:"SOLR server with index name, eg. localhost:8983/solr/example" required:"true"`
-	Q       string `val:"*:*" usage:"SOLR query"`
-	Max     int    `val:"100" usage:"Max number of rows"`
-	Rows    int    `val:"100" usage:"Number of rows returned per request"`
-	Version bool   `usage:"Show version and exit"`
+	Server       string   `usage:"SOLR server with index name, eg. localhost:8983/solr/example" required:"true"`
+	Q            string   `val:"*:*" usage:"SOLR query"`
+	Max          int      `val:"100" usage:"Max number of rows"`
+	Rows         int      `val:"100" usage:"Number of rows returned per request"`
+	Version      bool     `usage:"Show version and exit"`
+	RemoveFields []string `usage:"Remove fields, _version_ defaulted"`
 
 	baseURL string
 	query   url.Values
@@ -52,6 +54,12 @@ func (a *App) PostProcess() {
 	}
 
 	a.query = a.createQuery()
+
+	if len(a.RemoveFields) == 0 {
+		a.RemoveFields = []string{"_version_"}
+	}
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 }
 
 func (a App) CreateLink() string {
@@ -61,8 +69,6 @@ func (a App) CreateLink() string {
 func main() {
 	app := &App{}
 	flagparse.Parse(app)
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	for !app.ReachedMax() {
 		link := app.CreateLink()
@@ -79,13 +85,17 @@ func main() {
 func (a App) createQuery() url.Values {
 	v := url.Values{}
 	v.Set("q", a.Q)
-	v.Set("sort", "id")
+	v.Set("sort", "id asc")
 	v.Set("rows", fmt.Sprintf("%d", a.Rows))
 	v.Set("fl", "")
 	v.Set("wt", "json")
 	v.Set("cursorMark", "*")
 	return v
 }
+
+func (a App) CursorMark() string         { return a.query.Get("cursorMark") }
+func (a *App) SetCursorMark(mark string) { a.query.Set("cursorMark", mark) }
+func (a App) ReachedMax() bool           { return a.total >= a.Max }
 
 func (a *App) Dump(link string) string {
 	resp, err := pester.Get(link)
@@ -106,18 +116,16 @@ func (a *App) Dump(link string) string {
 	}
 
 	for _, doc := range r.Response.Docs {
-		bytes, _ := jj.DeleteBytes(doc, "_version_", jj.SetOptions{Optimistic: true, ReplaceInPlace: true})
-		fmt.Println(string(bytes))
+		for _, fl := range a.RemoveFields {
+			doc, _ = jj.DeleteBytes(doc, fl, jj.SetOptions{ReplaceInPlace: true})
+		}
+		fmt.Println(string(doc))
 	}
 
 	a.total += len(r.Response.Docs)
 	log.Printf("fetched %d/%d docs", a.total, r.Response.NumFound)
 	return r.NextCursorMark
 }
-
-func (a App) CursorMark() string         { return a.query.Get("cursorMark") }
-func (a *App) SetCursorMark(mark string) { a.query.Set("cursorMark", mark) }
-func (a App) ReachedMax() bool           { return a.total >= a.Max }
 
 // Response is a SOLR response.
 type Response struct {
