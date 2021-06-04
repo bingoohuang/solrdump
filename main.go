@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/ss"
+	"github.com/bingoohuang/gg/pkg/vars"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -28,6 +30,7 @@ Usage of %s (%s):
   -version       Show version and exit
   -remove-fields Remove fields, _version_ defaulted
   -output        Output file, or http url, or noop
+  -cursor        Enable cursor or not
   -v             Verbose, -vv -vvv
 `, os.Args[0], a.VersionInfo())
 }
@@ -39,6 +42,7 @@ type App struct {
 	Max          int    `val:"100"`
 	Rows         int    `val:"100"`
 	Version      bool
+	Cursor       bool `val:"true"`
 	RemoveFields []string
 	Output       []string
 	Verbose      int `flag:"v" count:"true"`
@@ -47,6 +51,7 @@ type App struct {
 	query    url.Values
 	total    int
 	outputFn func(doc []byte)
+	start    int
 }
 
 func main() {
@@ -58,16 +63,19 @@ func main() {
 
 	for !a.ReachedMax() {
 		link := a.CreateLink()
-
 		if a.Verbose > 0 {
 			log.Println(link)
 		}
 
-		if cursor := a.Dump(link); cursor == a.Cursor() {
-			break
-		} else {
-			a.SetCursor(cursor)
+		cursor, err := a.Dump(link)
+		if err != nil {
+			log.Fatalf("error: %v", err)
 		}
+		if cursor == a.GetCursor() {
+			break
+		}
+
+		a.SetCursor(cursor)
 	}
 
 	cost := time.Since(start)
@@ -81,32 +89,50 @@ func (a App) createQuery() url.Values {
 	v.Set("rows", fmt.Sprintf("%d", a.Rows))
 	v.Set("fl", "")
 	v.Set("wt", "json")
-	v.Set(cursorMark, "*")
+
+	if a.Cursor {
+		v.Set(cursorMark, "*")
+	} else {
+		v.Set("start", "0")
+	}
 	return v
 }
 
 const cursorMark = "cursorMark"
 
-func (a App) Cursor() string         { return a.query.Get(cursorMark) }
-func (a *App) SetCursor(mark string) { a.query.Set(cursorMark, mark) }
-func (a App) ReachedMax() bool       { return a.Max > 0 && a.total >= a.Max }
+func (a App) GetCursor() string {
+	if a.Cursor {
+		return a.query.Get(cursorMark)
+	}
 
-func (a *App) Dump(link string) string {
-	resp, err := pester.Get(link)
+	return "na"
+}
+func (a *App) SetCursor(mark string) {
+	if a.Cursor {
+		a.query.Set(cursorMark, mark)
+	} else {
+		a.query.Set("start", fmt.Sprintf("%d", a.total))
+	}
+}
+func (a App) ReachedMax() bool { return a.Max > 0 && a.total >= a.Max }
+
+func (a *App) Dump(url string) (string, error) {
+	resp, err := pester.Get(url)
 	if err != nil {
-		log.Fatalf("http: %s", err)
+		return "", fmt.Errorf("http %s: %w", url, err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
+	code := resp.StatusCode
+	if code >= 400 {
 		b, _ := ioutil.ReadAll(resp.Body)
-		log.Fatalf("resp status: %d body (%d): %s", resp.Status, len(b), string(b))
+		return "", fmt.Errorf("resp status: %d body (%d): %s", code, len(b), string(b))
 	}
 
 	var r Response
 	dec := json.NewDecoder(resp.Body)
 	if err := dec.Decode(&r); err != nil {
-		log.Fatalf("decode: %s", err)
+		return "", fmt.Errorf("decode: %w", err)
 	}
 
 	for _, doc := range r.Response.Docs {
@@ -116,9 +142,15 @@ func (a *App) Dump(link string) string {
 		a.outputFn(doc)
 	}
 
-	a.total += len(r.Response.Docs)
+	docs := len(r.Response.Docs)
+	a.total += docs
 	log.Printf("fetched %d/%d docs", a.total, r.Response.NumFound)
-	return r.NextCursorMark
+
+	if a.Cursor {
+		return r.NextCursorMark, nil
+	}
+
+	return ss.If(docs < a.Rows, "na", ""), nil
 }
 
 func (a *App) PostProcess() {
@@ -158,18 +190,38 @@ func (a *App) createOutputFn() func(doc []byte) {
 	}
 
 	return func(doc []byte) {
-		start := time.Now()
-		resp, err := pester.Post(uri, "application/json; charset=utf-8", bytes.NewReader(doc))
-		cost := time.Since(start)
-		if err != nil {
-			log.Printf("sent to %s error %v", uri, err)
-		} else if a.Verbose >= 2 {
-			body, _ := rest.ReadCloseBody(resp)
-			log.Printf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body)
-		} else if a.Verbose >= 1 {
-			rest.DiscardCloseBody(resp)
-			log.Printf("sent cost: %s status: %d", cost, resp.StatusCode)
-		}
+		writeElasticSearch(uri, a.Verbose, doc)
+	}
+}
+
+type JsonValue struct {
+	Value []byte
+}
+
+func (j *JsonValue) GetValue(name string) interface{} {
+	return jj.GetBytes(j.Value, name).String()
+}
+
+func writeElasticSearch(uri string, verbose int, doc []byte) {
+	// 从doc中提取并替换uri中的变量
+	uri = vars.Eval(uri, &JsonValue{Value: doc})
+
+	start := time.Now()
+	resp, err := pester.Post(uri, "application/json; charset=utf-8", bytes.NewReader(doc))
+	cost := time.Since(start)
+	if err != nil {
+		log.Printf("sent to %s error %v", uri, err)
+		return
+	}
+
+	if verbose >= 2 {
+		body, _ := rest.ReadCloseBody(resp)
+		log.Printf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body)
+	}
+
+	if verbose >= 1 {
+		rest.DiscardCloseBody(resp)
+		log.Printf("sent cost: %s status: %d", cost, resp.StatusCode)
 	}
 }
 
