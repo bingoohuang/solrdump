@@ -6,3 +6,4 @@ solrdump*.rpm
 /tmp
 /*.ndj
 /.idea
+/httplive.db

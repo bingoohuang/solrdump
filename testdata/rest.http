@@ -1,0 +1,33 @@
+POST /solr/collection1/update?commitWithin=1000 HTTP/1.1
+Host: 127.0.0.1:8983
+Content-Type: application/json
+Content-Length: 814
+
+[
+    {
+        "id": "60bad0a3f46639d20ed3e855",
+        "index_i": 0,
+        "guid_s": "5e0abb5b-d324-4637-a11e-98a33afc2de1",
+        "isActive_b": true,
+        "balance_s": "$2,107.27",
+        "picture_s": "http://placehold.it/32x32",
+        "age_i": 25,
+        "eyeColor_s": "green",
+        "name_s": "Aline Wiley",
+        "gender_s": "female",
+        "company_s": "EURON",
+        "email_s": "alinewiley@euron.com",
+        "phone_s": "+1 (844) 431-2077",
+        "address_s": "238 Alabama Avenue, Fillmore, South Dakota, 6551",
+        "about_s": "Dolor adipisicing duis anim anim veniam nulla nostrud nulla",
+        "registered_s": "2017-11-29T06:18:46 -08:00",
+        "greeting_s": "Hello, Aline Wiley! You have 1 unread messages.",
+        "favoriteFruit_s": "apple"
+    }
+]
+
+
+###
+
+http://localhost:8983/solr/collection1/select?q=*%3A*&rows=1000&wt=json&indent=true
+

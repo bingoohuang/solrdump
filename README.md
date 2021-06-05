@@ -16,6 +16,7 @@ also [efficient deep paging with cursors](https://solr.pl/en/2014/03/10/solr-4-7
 ## Features
 
 1. `_version_` deleted from the result
+2. `output="http://127.0.0.1:9092/zz/docs?routing={email_s}"`, url can be evaluated by `{GjsonPath}`, [Syntax](https://github.com/bingoohuang/jj/blob/master/SYNTAX.md)
 
 ## Usage
 
@@ -31,7 +32,7 @@ Usage of solrdump (0.1.2):
   -v             Verbose, -v -vv -vvv
 ```
 
-## Print docs
+### Print docs
 
 ```shell
 $ solrdump -server 192.168.126.16:8983/solr/zz -max 3          
@@ -45,11 +46,14 @@ $ solrdump -server 192.168.126.16:8983/solr/zz -max 3
 ### Write to elastic search
 
 ```sh
-➜  500px solrdump -server 192.168.126.16:8983/solr/licenseIndex -max 3 -output 192.168.126.5:9202/bench/zz -v
-2021/06/04 13:08:02 http://192.168.126.16:8983/solr/licenseIndex/select?cursorMark=%2A&fl=&q=%2A%3A%2A&rows=3&sort=id+asc&wt=json
-2021/06/04 13:08:03 sent cost: 1.020677367s status: 201
-2021/06/04 13:08:03 sent cost: 14.077046ms status: 201
-2021/06/04 13:08:03 sent cost: 9.916851ms status: 201
+$  solrdump -server :8983/solr/collection1 -max 0 -output ":9200/zz/docs?routing={email_s}" -vv
+2021/06/05 11:13:34 started
+2021/06/05 11:13:34 solr query: "http://127.0.0.1:8983/solr/collection1/select?cursorMark=*&fl=&q=*:*&rows=1000&sort=id asc&wt=json"
+2021/06/05 11:13:35 evaluated uri: http://127.0.0.1:9200/zz/docs?routing=alinewiley@euron.com
+2021/06/05 11:13:35 sent cost: 464.61762ms status: 201, body: {"_index":"zz","_type":"docs","_id":"4Bgp2nkBPW9--6YOYTIv","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":0,"_primary_term":1}
+2021/06/05 11:13:35 fetched 1/1 docs
+2021/06/05 11:13:35 solr query: "http://127.0.0.1:8983/solr/collection1/select?cursorMark=AoE4NjBiYWQwYTNmNDY2MzlkMjBlZDNlODU1&fl=&q=*:*&rows=1000&sort=id asc&wt=json"
+2021/06/05 11:13:35 process rate 1.282611 docs/s, cost 779.659386ms
 ```
 
 ## Resources
@@ -57,6 +61,8 @@ $ solrdump -server 192.168.126.16:8983/solr/zz -max 3
 1. [o19s/solr-to-es](https://github.com/o19s/solr-to-es)
 2. [solr cursor select query](https://github.com/frizner/glsolr)
 3. [frizner/solrdump](https://github.com/frizner/solrdump)
+4. [hectorcorrea/solr-for-newbies](https://github.com/hectorcorrea/solr-for-newbies)
+5. [online json-generator](https://www.json-generator.com)
 
 ## Pagination of Results
 
@@ -110,3 +116,71 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
   "nextCursorMark": "AoE/BTAwMDEzZGQ5LTczMjYtNDNkNy05NzdkLTYwY2RhYjhkZWI5NQ=="
 }
 ```
+
+## Docker
+
+### Solr Docker
+
+1. `docker pull geerlingguy/solr:4.10.4` [geerlingguy/solr](https://hub.docker.com/r/geerlingguy/solr)
+2. `docker run -d --name=solr -p 8983:8983 geerlingguy/solr:4.10.4 /opt/solr/bin/solr start -p 8983 -f`
+3. http://127.0.0.1:8983/solr/#/
+   ![img.png](_images/img.png)
+4. POST requests
+    ```http
+    POST /solr/collection1/update?commitWithin=1000 HTTP/1.1
+    Host: 127.0.0.1:8983
+    Content-Type: application/json
+    Content-Length: 814
+    
+    [
+        {
+            "id": "60bad0a3f46639d20ed3e854",
+            "index_i": 0,
+            "guid_s": "5e0abb5b-d324-4637-a11e-98a33afc2de1",
+            "isActive_b": true,
+            "balance_s": "$2,107.27",
+            "picture_s": "http://placehold.it/32x32",
+            "age_i": 25,
+            "eyeColor_s": "green",
+            "name_s": "Aline Wiley",
+            "gender_s": "female",
+            "company_s": "EURON",
+            "email_s": "alinewiley@euron.com",
+            "phone_s": "+1 (844) 431-2077",
+            "address_s": "238 Alabama Avenue, Fillmore, South Dakota, 6551",
+            "about_s": "Dolor adipisicing duis anim anim veniam nulla nostrud nulla",
+            "registered_s": "2017-11-29T06:18:46 -08:00",
+            "greeting_s": "Hello, Aline Wiley! You have 1 unread messages.",
+            "favoriteFruit_s": "apple"
+        }
+    ]
+   
+    HTTP/1.1 200 OK
+    Content-Type: text/plain;charset=UTF-8
+    Transfer-Encoding: chunked
+    
+    {"responseHeader":{"status":0,"QTime":3}}
+    ```
+5. QUERY: http://localhost:8983/solr/collection1/select?q=*%3A*&rows=1000&wt=json&indent=true
+
+### Elasticsearch docker
+
+1. `docker pull elasticsearch:7.13.1`, [docker hub](https://hub.docker.com/_/elasticsearch?tab=description&page=1&ordering=last_updated)
+2. `$ docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.13.1`
+3. [chrome extension ElasticSearch Head](https://chrome.google.com/webstore/detail/elasticsearch-head/ffmkiejjmecolpfloofpjologoblkegm), type in `http://127.0.0.1:9200/`
+
+## FAQ
+
+1. [How to insert data to solr collection using Postman?](https://stackoverflow.com/a/49179604)
+    - POST request to http://localhost:8983/solr/[collection_name]/update?commitWithin=1000
+    - Add the header Content-Type: application/json
+    - Make sure to create a json array for multiple documents
+
+    ```json
+    [ { "name": "John", "age": 30, "cars": "BMW" }, { "name": "Harry", "age": 30, "cars": "BMW" }, { "name": "Pinku", "age": 30, "cars": "BMW" } ]
+    ```
+2. [Deleting documents in SOLR](https://gist.github.com/CesarCapillas/a796c0e7cba10ac02213c7f3485d6e90#file-delete-by-id-sh)
+    ```sh
+    $ curl -X POST "http://127.0.0.1:8983/solr/collection1/update?commit=true&wt=json" -H "Content-Type: text/xml" --data-binary "<delete><id>60bad0a3f46639d20ed3e855</id></delete>"
+    {"responseHeader":{"status":0,"QTime":10}}
+    ```

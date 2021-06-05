@@ -11,16 +11,16 @@ clean:
 	rm -f $(TARGETS)
 	rm -f $(PKGNAME)_*deb
 	rm -f $(PKGNAME)-*rpm
-	rm -rf packaging/deb/$(PKGNAME)/usr
+	rm -rf _packaging/deb/$(PKGNAME)/usr
 
 imports:
 	goimports -w .
 
 deb: $(TARGETS)
-	mkdir -p packaging/deb/$(PKGNAME)/usr/sbin
-	cp $(TARGETS) packaging/deb/$(PKGNAME)/usr/sbin
-	cd packaging/deb && fakeroot dpkg-deb --build $(PKGNAME) .
-	mv packaging/deb/$(PKGNAME)_*.deb .
+	mkdir -p _packaging/deb/$(PKGNAME)/usr/sbin
+	cp $(TARGETS) _packaging/deb/$(PKGNAME)/usr/sbin
+	cd _packaging/deb && fakeroot dpkg-deb --build $(PKGNAME) .
+	mv _packaging/deb/$(PKGNAME)_*.deb .
 
 rpm: $(TARGETS)
 	mkdir -p $(HOME)/rpmbuild/{BUILD,SOURCES,SPECS,RPMS}

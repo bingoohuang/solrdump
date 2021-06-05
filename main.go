@@ -23,9 +23,9 @@ import (
 func (a App) Usage() string {
 	return fmt.Sprintf(`
 Usage of %s (%s):
-  -max int       Max number of rows (default 100)
+  -max int       Max number of rows (default 10)
   -q string      SOLR query (default "*:*")
-  -rows int      Number of rows returned per request (default 100)
+  -rows int      Number of rows returned per request (default 1000)
   -server string SOLR server with index name, eg. localhost:8983/solr/example
   -version       Show version and exit
   -remove-fields Remove fields, _version_ defaulted
@@ -39,8 +39,8 @@ func (App) VersionInfo() string { return "0.1.3" }
 type App struct {
 	Server       string `required:"true"`
 	Q            string `val:"*:*"`
-	Max          int    `val:"100"`
-	Rows         int    `val:"100"`
+	Max          int    `val:"10"`
+	Rows         int    `val:"1000"`
 	Version      bool
 	Cursor       bool `val:"true"`
 	RemoveFields []string
@@ -64,7 +64,8 @@ func main() {
 	for !a.ReachedMax() {
 		link := a.CreateLink()
 		if a.Verbose > 0 {
-			log.Println(link)
+			humanLink, _ := url.QueryUnescape(link)
+			log.Printf("solr query: %q", humanLink)
 		}
 
 		cursor, err := a.Dump(link)
@@ -129,7 +130,7 @@ func (a *App) Dump(url string) (string, error) {
 		return "", fmt.Errorf("resp status: %d body (%d): %s", code, len(b), string(b))
 	}
 
-	var r Response
+	var r SolrResponse
 	dec := json.NewDecoder(resp.Body)
 	if err := dec.Decode(&r); err != nil {
 		return "", fmt.Errorf("decode: %w", err)
@@ -143,8 +144,10 @@ func (a *App) Dump(url string) (string, error) {
 	}
 
 	docs := len(r.Response.Docs)
-	a.total += docs
-	log.Printf("fetched %d/%d docs", a.total, r.Response.NumFound)
+	if docs > 0 {
+		a.total += docs
+		log.Printf("fetched %d/%d docs", a.total, r.Response.NumFound)
+	}
 
 	if a.Cursor {
 		return r.NextCursorMark, nil
@@ -199,12 +202,16 @@ type JsonValue struct {
 }
 
 func (j *JsonValue) GetValue(name string) interface{} {
-	return jj.GetBytes(j.Value, name).String()
+	result := jj.GetBytes(j.Value, name)
+	return result.String()
 }
 
-func writeElasticSearch(uri string, verbose int, doc []byte) {
+func writeElasticSearch(uri0 string, verbose int, doc []byte) {
 	// 从doc中提取并替换uri中的变量
-	uri = vars.Eval(uri, &JsonValue{Value: doc})
+	uri := vars.Eval(uri0, &JsonValue{Value: doc})
+	if verbose >= 1 && uri != uri0 {
+		log.Printf("evaluated uri: %s", uri)
+	}
 
 	start := time.Now()
 	resp, err := pester.Post(uri, "application/json; charset=utf-8", bytes.NewReader(doc))
@@ -217,10 +224,8 @@ func writeElasticSearch(uri string, verbose int, doc []byte) {
 	if verbose >= 2 {
 		body, _ := rest.ReadCloseBody(resp)
 		log.Printf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body)
-	}
-
-	if verbose >= 1 {
-		rest.DiscardCloseBody(resp)
+	} else if verbose >= 1 {
+		_ = rest.DiscardCloseBody(resp)
 		log.Printf("sent cost: %s status: %d", cost, resp.StatusCode)
 	}
 }
@@ -229,15 +234,17 @@ func (a App) CreateLink() string {
 	return fmt.Sprintf("%s/select?%s", a.baseURL, a.query.Encode())
 }
 
-// Response is a SOLR response.
-type Response struct {
+// SolrResponse is a SOLR response.
+type SolrResponse struct {
 	//Header   Header `json:"header"`
-	Response struct {
-		NumFound int               `json:"numFound"`
-		Start    int               `json:"start"`
-		Docs     []json.RawMessage `json:"docs"` // dependent on SOLR schema
-	} `json:"response"`
-	NextCursorMark string `json:"nextCursorMark"`
+	Response       Response `json:"response"`
+	NextCursorMark string   `json:"nextCursorMark"`
+}
+
+type Response struct {
+	NumFound int               `json:"numFound"`
+	Start    int               `json:"start"`
+	Docs     []json.RawMessage `json:"docs"` // dependent on SOLR schema
 }
 
 type Header struct {
