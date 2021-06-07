@@ -2,11 +2,15 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/osx"
+	"github.com/bingoohuang/gg/pkg/rotate"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/gg/pkg/vars"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -47,15 +51,19 @@ type App struct {
 	Output       []string
 	Verbose      int `flag:"v" count:"true"`
 
-	baseURL  string
-	query    url.Values
-	total    int
-	outputFn func(doc []byte)
-	start    int
+	baseURL       string
+	query         url.Values
+	total         int
+	outputFn      func(doc []byte)
+	start         int
+	Context       context.Context
+	ContextCancel context.CancelFunc
+	closers       []io.Closer
 }
 
 func main() {
-	a := &App{}
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	a := &App{Context: ctx, ContextCancel: cancelFunc}
 	flagparse.Parse(a)
 
 	log.Printf("started")
@@ -78,6 +86,12 @@ func main() {
 
 		a.SetCursor(cursor)
 	}
+
+	for _, c := range a.closers {
+		_ = c.Close()
+	}
+
+	a.ContextCancel()
 
 	cost := time.Since(start)
 	log.Printf("process rate %f docs/s, cost %s", float64(a.total)/cost.Seconds(), cost)
@@ -187,13 +201,27 @@ func (a *App) createOutputFn() func(doc []byte) {
 		return func(doc []byte) {}
 	}
 
-	uri, err := rest.FixURI(a.Output[0])
-	if err != nil {
-		log.Fatalf("output %s, err: %v", a.Output[0], err)
+	var fns []func(doc []byte)
+	for _, out := range a.Output {
+		if uri, ok := rest.MaybeURL(out); ok {
+			fns = append(fns, func(doc []byte) {
+				outputHttp(uri, a.Verbose, doc)
+			})
+		} else {
+			p := osx.ExpandHome(out)
+			w := rotate.NewQueueWriter(a.Context, p, 1000, false)
+			a.closers = append(a.closers, w)
+
+			fns = append(fns, func(doc []byte) {
+				w.Send(string(doc)+"\n", true)
+			})
+		}
 	}
 
 	return func(doc []byte) {
-		writeElasticSearch(uri, a.Verbose, doc)
+		for _, f := range fns {
+			f(doc)
+		}
 	}
 }
 
@@ -206,7 +234,7 @@ func (j *JsonValue) GetValue(name string) interface{} {
 	return result.String()
 }
 
-func writeElasticSearch(uri0 string, verbose int, doc []byte) {
+func outputHttp(uri0 string, verbose int, doc []byte) {
 	// 从doc中提取并替换uri中的变量
 	uri := vars.EvalSubstitute(uri0, &JsonValue{Value: doc})
 	if verbose >= 1 && uri != uri0 {

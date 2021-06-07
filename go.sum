@@ -1,5 +1,7 @@
 github.com/bingoohuang/gg v0.0.0-20210607143355-2c10c87ca122 h1:K/NQQizBUFiXl5/Fn8/5R5SxJF1CZLbwgxsDhkB1n9w=
 github.com/bingoohuang/gg v0.0.0-20210607143355-2c10c87ca122/go.mod h1:kKNUAtRrABOvh5ztjh9Q5qtJBkx0sxwCHBQDBgWPhbw=
+github.com/bingoohuang/gg v0.0.0-20210607151359-89984ac61d46 h1:J1R9GVtGCyYQPtl3Qw7veH3BJ3NuzIjWtVeyZq5LcvA=
+github.com/bingoohuang/gg v0.0.0-20210607151359-89984ac61d46/go.mod h1:kKNUAtRrABOvh5ztjh9Q5qtJBkx0sxwCHBQDBgWPhbw=
 github.com/bingoohuang/jj v0.0.0-20210602063151-d4765d38e795 h1:AxHu0w8AUBYGu211XvuoNQjLIVFKrN4N5QgHgsLyoQg=
 github.com/bingoohuang/jj v0.0.0-20210602063151-d4765d38e795/go.mod h1:bWJgpCAKIq/UOMbGxmZlOjU2JZfHhta8XVw5ztrVWRM=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
