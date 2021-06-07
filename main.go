@@ -6,10 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/osx"
-	"github.com/bingoohuang/gg/pkg/rotate"
-	"github.com/bingoohuang/gg/pkg/ss"
-	"github.com/bingoohuang/gg/pkg/vars"
 	"io"
 	"io/ioutil"
 	"log"
@@ -17,6 +13,12 @@ import (
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/jihe"
+	"github.com/bingoohuang/gg/pkg/osx"
+	"github.com/bingoohuang/gg/pkg/rotate"
+	"github.com/bingoohuang/gg/pkg/ss"
+	"github.com/bingoohuang/gg/pkg/vars"
 
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/rest"
@@ -55,10 +57,13 @@ type App struct {
 	query         url.Values
 	total         int
 	outputFn      func(doc []byte)
-	start         int
 	Context       context.Context
 	ContextCancel context.CancelFunc
 	closers       []io.Closer
+
+	printer     *jihe.DelayChan
+	linkPrinter *jihe.DelayChan
+	httpPrinter *jihe.DelayChan
 }
 
 func main() {
@@ -71,9 +76,9 @@ func main() {
 
 	for !a.ReachedMax() {
 		link := a.CreateLink()
-		if a.Verbose > 0 {
+		if a.Verbose >= 2 {
 			humanLink, _ := url.QueryUnescape(link)
-			log.Printf("solr query: %q", humanLink)
+			a.linkPrinter.Put(fmt.Sprintf("solr query: %q", humanLink))
 		}
 
 		cursor, err := a.Dump(link)
@@ -94,7 +99,7 @@ func main() {
 	a.ContextCancel()
 
 	cost := time.Since(start)
-	log.Printf("process rate %f docs/s, cost %s", float64(a.total)/cost.Seconds(), cost)
+	log.Printf("process %d docs, rate %f docs/s, cost %s", a.total, float64(a.total)/cost.Seconds(), cost)
 }
 
 func (a App) createQuery() url.Values {
@@ -160,7 +165,7 @@ func (a *App) Dump(url string) (string, error) {
 	docs := len(r.Response.Docs)
 	if docs > 0 {
 		a.total += docs
-		log.Printf("fetched %d/%d docs", a.total, r.Response.NumFound)
+		a.printer.Put(fmt.Sprintf("fetched %d/%d docs", a.total, r.Response.NumFound))
 	}
 
 	if a.Cursor {
@@ -186,6 +191,10 @@ func (a *App) PostProcess() {
 	if len(a.RemoveFields) == 0 {
 		a.RemoveFields = []string{"_version_"}
 	}
+	interval := time.Duration(ss.Ifi(a.Verbose >= 1, 5, 10)) * time.Second
+	a.printer = jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
+	a.linkPrinter = jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
+	a.httpPrinter = jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
 
 	a.outputFn = a.createOutputFn()
 
@@ -205,7 +214,7 @@ func (a *App) createOutputFn() func(doc []byte) {
 	for _, out := range a.Output {
 		if uri, ok := rest.MaybeURL(out); ok {
 			fns = append(fns, func(doc []byte) {
-				outputHttp(uri, a.Verbose, doc)
+				outputHttp(uri, a.Verbose, doc, a.httpPrinter)
 			})
 		} else {
 			p := osx.ExpandHome(out)
@@ -234,11 +243,11 @@ func (j *JsonValue) GetValue(name string) interface{} {
 	return result.String()
 }
 
-func outputHttp(uri0 string, verbose int, doc []byte) {
+func outputHttp(uri0 string, verbose int, doc []byte, printer *jihe.DelayChan) {
 	// 从doc中提取并替换uri中的变量
 	uri := vars.EvalSubstitute(uri0, &JsonValue{Value: doc})
 	if verbose >= 1 && uri != uri0 {
-		log.Printf("evaluated uri: %s", uri)
+		printer.Put(fmt.Sprintf("evaluated uri: %s", uri))
 	}
 
 	start := time.Now()
@@ -251,10 +260,10 @@ func outputHttp(uri0 string, verbose int, doc []byte) {
 
 	if verbose >= 2 {
 		body, _ := rest.ReadCloseBody(resp)
-		log.Printf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body)
+		printer.Put(fmt.Sprintf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body))
 	} else if verbose >= 1 {
 		_ = rest.DiscardCloseBody(resp)
-		log.Printf("sent cost: %s status: %d", cost, resp.StatusCode)
+		printer.Put(fmt.Sprintf("sent cost: %s status: %d", cost, resp.StatusCode))
 	}
 }
 
