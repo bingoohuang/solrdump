@@ -208,7 +208,7 @@ func (j *JsonValue) GetValue(name string) interface{} {
 
 func writeElasticSearch(uri0 string, verbose int, doc []byte) {
 	// 从doc中提取并替换uri中的变量
-	uri := vars.Eval(uri0, &JsonValue{Value: doc})
+	uri := vars.EvalSubstitute(uri0, &JsonValue{Value: doc})
 	if verbose >= 1 && uri != uri0 {
 		log.Printf("evaluated uri: %s", uri)
 	}
