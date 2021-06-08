@@ -1,7 +1,7 @@
-github.com/bingoohuang/gg v0.0.0-20210607174627-f1c621c3bf10 h1:EAFjSG/O2/1j3R6uqNVyvUPVa58KPuQPv0JyrKX2zcg=
-github.com/bingoohuang/gg v0.0.0-20210607174627-f1c621c3bf10/go.mod h1:kKNUAtRrABOvh5ztjh9Q5qtJBkx0sxwCHBQDBgWPhbw=
-github.com/bingoohuang/jj v0.0.0-20210602063151-d4765d38e795 h1:AxHu0w8AUBYGu211XvuoNQjLIVFKrN4N5QgHgsLyoQg=
-github.com/bingoohuang/jj v0.0.0-20210602063151-d4765d38e795/go.mod h1:bWJgpCAKIq/UOMbGxmZlOjU2JZfHhta8XVw5ztrVWRM=
+github.com/bingoohuang/gg v0.0.0-20210608031951-72884199b0ac h1:rotU1tlCTqRCD4oXHr/ahSF2+FSlScIZnqsEIBJjlRA=
+github.com/bingoohuang/gg v0.0.0-20210608031951-72884199b0ac/go.mod h1:kKNUAtRrABOvh5ztjh9Q5qtJBkx0sxwCHBQDBgWPhbw=
+github.com/bingoohuang/jj v0.0.0-20210608032314-a03ed7fb3553 h1:xMT1AwChEJqcSlw4mtMWkiyJGb4rQweQ+VsVhYKogtk=
+github.com/bingoohuang/jj v0.0.0-20210608032314-a03ed7fb3553/go.mod h1:bV9nOhOo9pY9zfWfXnzmkTRYHNKU2bIoz5asX5Xldyw=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
 github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
@@ -66,7 +66,6 @@ github.com/sethgrid/pester v0.0.0-20190127155807-68a33a018ad0 h1:X9XMOYjxEfAYSy3
 github.com/sethgrid/pester v0.0.0-20190127155807-68a33a018ad0/go.mod h1:Ad7IjTpvzZO8Fl0vh9AzQ+j/jYZfyp2diGwI8m5q+ns=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
-github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 golang.org/x/crypto v0.0.0-20180214000028-650f4a345ab4/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
