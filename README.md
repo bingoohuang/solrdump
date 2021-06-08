@@ -16,7 +16,8 @@ also [efficient deep paging with cursors](https://solr.pl/en/2014/03/10/solr-4-7
 ## Features
 
 1. `_version_` deleted from the result
-2. `output="http://127.0.0.1:9092/zz/docs?routing={email_s}"`, url can be evaluated by `{GjsonPath}`, [Syntax](https://github.com/bingoohuang/jj/blob/master/SYNTAX.md)
+2. `output="http://127.0.0.1:9092/zz/docs?routing=@path"` `@path` in the url will be evaluated by `{GjsonPath}`
+   , [Syntax](https://github.com/bingoohuang/jj/blob/master/SYNTAX.md)
 
 ## Usage
 
@@ -46,15 +47,17 @@ $ solrdump -server 192.168.126.16:8983/solr/zz -max 3
 ### Write to elastic search
 
 ```sh
-$  solrdump -server :8983/solr/collection1 -max 0 -output ":9200/zz/docs?routing={email_s}" -vv
-2021/06/05 11:13:34 started
-2021/06/05 11:13:34 solr query: "http://127.0.0.1:8983/solr/collection1/select?cursorMark=*&fl=&q=*:*&rows=1000&sort=id asc&wt=json"
-2021/06/05 11:13:35 evaluated uri: http://127.0.0.1:9200/zz/docs?routing=alinewiley@euron.com
-2021/06/05 11:13:35 sent cost: 464.61762ms status: 201, body: {"_index":"zz","_type":"docs","_id":"4Bgp2nkBPW9--6YOYTIv","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":0,"_primary_term":1}
-2021/06/05 11:13:35 fetched 1/1 docs
-2021/06/05 11:13:35 solr query: "http://127.0.0.1:8983/solr/collection1/select?cursorMark=AoE4NjBiYWQwYTNmNDY2MzlkMjBlZDNlODU1&fl=&q=*:*&rows=1000&sort=id asc&wt=json"
-2021/06/05 11:13:35 process rate 1.282611 docs/s, cost 779.659386ms
+$ solrdump -server 192.168.126.16:8983/solr/licenseIndex -max 10 -vv -output "192.168.126.18:9202/license/docs?routing=@holderIdentityNum.0"
+2021/06/08 14:30:53 started
+2021/06/08 14:30:58 fetched 10/509311 docs
+2021/06/08 14:30:58 solr query: "http://192.168.126.16:8983/solr/licenseIndex/select?cursorMark=*&fl=&q=*:*&rows=10&sort=id asc&wt=json"
+2021/06/08 14:30:58 http uri: http://192.168.126.18:9202/license/docs?routing=441421201510165436
+2021/06/08 14:30:58 sent cost: 5.175523ms status: 201, body: {"_index":"license","_type":"docs","_id":"rB1R6nkBuRYpTrL3HTzU","_version":1,"result":"created","_shards":{"total":1,"successful":1,"failed":0},"_seq_no":30989363,"_primary_term":3}
+2021/06/08 14:31:03 process 10 docs, rate 0.999881 docs/s, cost 10.001191743s
 ```
+
+then [elasticsearch query on 441421201510165436](http://192.168.126.18:9202/license/_search?routing=441421201510165436&q=holderIdentityNum:441421201510165436)
+can be performed.
 
 ## Resources
 
@@ -165,9 +168,11 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
 
 ### Elasticsearch docker
 
-1. `docker pull elasticsearch:7.13.1`, [docker hub](https://hub.docker.com/_/elasticsearch?tab=description&page=1&ordering=last_updated)
+1. `docker pull elasticsearch:7.13.1`
+   , [docker hub](https://hub.docker.com/_/elasticsearch?tab=description&page=1&ordering=last_updated)
 2. `$ docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.13.1`
-3. [chrome extension ElasticSearch Head](https://chrome.google.com/webstore/detail/elasticsearch-head/ffmkiejjmecolpfloofpjologoblkegm), type in `http://127.0.0.1:9200/`
+3. [chrome extension ElasticSearch Head](https://chrome.google.com/webstore/detail/elasticsearch-head/ffmkiejjmecolpfloofpjologoblkegm)
+   , type in `http://127.0.0.1:9200/`
 
 ## FAQ
 

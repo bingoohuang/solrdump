@@ -41,7 +41,7 @@ Usage of %s (%s):
   -v             Verbose, -vv -vvv
 `, os.Args[0], a.VersionInfo())
 }
-func (App) VersionInfo() string { return "0.1.3" }
+func (App) VersionInfo() string { return "0.1.4 2021-06-08 14:45:21" }
 
 type App struct {
 	Server       string `required:"true"`
@@ -54,20 +54,19 @@ type App struct {
 	Output       []string
 	Verbose      int `flag:"v" count:"true"`
 
-	baseURL       string
-	query         url.Values
-	total         int
-	outputFn      func(doc []byte)
-	Context       context.Context
-	ContextCancel context.CancelFunc
-	closers       []io.Closer
+	baseURL  string
+	query    url.Values
+	total    int
+	outputFn func(doc []byte)
+	Context  context.Context
+	closers  []io.Closer
 
 	printer *jihe.DelayChan
 }
 
 func main() {
 	c, cancelFunc := ctx.RegisterSignals(context.Background())
-	a := &App{Context: c, ContextCancel: cancelFunc}
+	a := &App{Context: c}
 	flagparse.Parse(a)
 
 	log.Printf("started")
@@ -95,8 +94,7 @@ func main() {
 		_ = c.Close()
 	}
 
-	a.ContextCancel()
-
+	cancelFunc()
 	cost := time.Since(start)
 	log.Printf("process %d docs, rate %f docs/s, cost %s", a.total, float64(a.total)/cost.Seconds(), cost)
 }
@@ -186,7 +184,7 @@ func (a *App) PostProcess() {
 	}
 	interval := time.Duration(ss.Ifi(a.Verbose >= 1, 5, 10)) * time.Second
 	a.printer = jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
-
+	a.closers = append(a.closers, a.printer)
 	a.outputFn = a.createOutputFn()
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -226,19 +224,17 @@ func (a *App) createOutputFn() func(doc []byte) {
 }
 
 type JsonValue struct {
-	Value []byte
+	Doc []byte
 }
 
-func (j *JsonValue) GetValue(name string) interface{} {
-	result := jj.GetBytes(j.Value, name)
-	return result.String()
-}
+func (j *JsonValue) Value(name, _ string) interface{} { return jj.GetBytes(j.Doc, name).String() }
 
 func outputHttp(uri0 string, verbose int, doc []byte, printer *jihe.DelayChan) {
 	// 从doc中提取并替换uri中的变量
-	uri := vars.EvalSubstitute(uri0, &JsonValue{Value: doc})
+	// 例如uri为`127.0.0.1:9092/zz/docs?routing=@id`，则从doc（JSON格式)中取出key是id的值替换进去
+	uri := vars.ParseExpr(uri0).Eval(&JsonValue{Doc: doc}).(string)
 	if verbose >= 1 && uri != uri0 {
-		printer.Put(fmt.Sprintf("evaluated uri: %s", uri))
+		printer.PutKey("request", fmt.Sprintf("http uri: %s", uri))
 	}
 
 	start := time.Now()
