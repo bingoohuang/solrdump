@@ -103,7 +103,7 @@ func main() {
 	log.Printf("process %d docs, rate %f docs/s, cost %s", a.total, float64(a.total)/cost.Seconds(), cost)
 }
 
-func (a App) createQuery() {
+func (a *App) createQuery() {
 	a.query = url.Values{}
 	a.query.Set("q", a.Q)
 	a.query.Set("sort", "id asc")
