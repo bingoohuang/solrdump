@@ -229,7 +229,7 @@ func (a *App) PostProcess() {
 	} else {
 		a.printer = &LogPrinter{}
 	}
-	a.ResponseCh = make(chan Response, 100)
+	a.ResponseCh = make(chan Response, 1)
 	a.outputFn = a.createOutputFn()
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
