@@ -474,7 +474,7 @@ func (c *Client) PostForm(url string, data url.Values) (*http.Response, error) {
 	return c.PostFormContext(context.TODO(), url, data)
 }
 
-// set RetryOnHTTP429 for clients,
+// SetRetryOnHTTP429 set RetryOnHTTP429 for clients,
 func (c *Client) SetRetryOnHTTP429(flag bool) {
 	c.RetryOnHTTP429 = flag
 }
@@ -483,27 +483,27 @@ func (c *Client) SetRetryOnHTTP429(flag bool) {
 // Provide self-constructing variants //
 ////////////////////////////////////////
 
-// Do provides the same functionality as http.Client.Do and creates its own constructor
+// DoContext provides the same functionality as http.Client.Do and creates its own constructor
 func DoContext(ctx context.Context, req *http.Request) (*http.Response, error) {
 	return New().DoContext(ctx, req)
 }
 
-// Get provides the same functionality as http.Client.Get and creates its own constructor
+// GetContext provides the same functionality as http.Client.Get and creates its own constructor
 func GetContext(ctx context.Context, url string) (*http.Response, error) {
 	return New().GetContext(ctx, url)
 }
 
-// Head provides the same functionality as http.Client.Head and creates its own constructor
+// HeadContext provides the same functionality as http.Client.Head and creates its own constructor
 func HeadContext(ctx context.Context, url string) (*http.Response, error) {
 	return New().HeadContext(ctx, url)
 }
 
-// Post provides the same functionality as http.Client.Post and creates its own constructor
+// PostContext provides the same functionality as http.Client.Post and creates its own constructor
 func PostContext(ctx context.Context, url string, bodyType string, body io.Reader) (*http.Response, error) {
 	return New().PostContext(ctx, url, bodyType, body)
 }
 
-// PostForm provides the same functionality as http.Client.PostForm and creates its own constructor
+// PostFormContext provides the same functionality as http.Client.PostForm and creates its own constructor
 func PostFormContext(ctx context.Context, url string, data url.Values) (*http.Response, error) {
 	return New().PostFormContext(ctx, url, data)
 }

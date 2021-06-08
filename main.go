@@ -123,12 +123,24 @@ func (a *App) goOutput(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
 		for resp := range a.ResponseCh {
-			for _, doc := range resp.Docs {
-				a.outputFn(doc)
-			}
+			a.processResponse(resp)
 		}
 	}()
+}
+
+func (a *App) processResponse(resp Response) {
+	for _, doc := range resp.Docs {
+		for _, v := range a.RemoveFields {
+			if vv, err := jj.DeleteBytes(doc, v, jj.SetOptions{ReplaceInPlace: true}); err != nil {
+				log.Printf("failed to delete %s from doc %s", v, doc)
+			} else {
+				doc = vv
+			}
+		}
+		a.outputFn(doc)
+	}
 }
 
 func (a *App) createQuery() {
@@ -164,7 +176,7 @@ func (a *App) Dump(url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("http %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer rest.DiscardCloseBody(resp)
 
 	code := resp.StatusCode
 	if code >= 400 {
@@ -173,12 +185,12 @@ func (a *App) Dump(url string) (string, error) {
 	}
 
 	var r SolrResponse
-	dec := json.NewDecoder(resp.Body)
-	if err := dec.Decode(&r); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return "", fmt.Errorf("decode: %w", err)
 	}
 
 	a.ResponseCh <- r.Response
+
 	docs := len(r.Response.Docs)
 	if docs > 0 {
 		a.total += docs
@@ -271,7 +283,6 @@ func outputHttp(uri0 string, verbose int, doc []byte, printer Printer) {
 	}
 
 	start := time.Now()
-
 	resp, err := pester.Post(uri, rest.ContentTypeJSON, bytes.NewReader(doc))
 	cost := time.Since(start)
 	if err != nil {
@@ -279,11 +290,16 @@ func outputHttp(uri0 string, verbose int, doc []byte, printer Printer) {
 		return
 	}
 
+	defer rest.DiscardCloseBody(resp)
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		printer.PutKey("request body", string(doc))
+	}
+
 	if verbose >= 2 {
 		body, _ := rest.ReadCloseBody(resp)
 		printer.PutKey("response", fmt.Sprintf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body))
 	} else if verbose >= 1 {
-		_ = rest.DiscardCloseBody(resp)
 		printer.PutKey("response", fmt.Sprintf("sent cost: %s status: %d", cost, resp.StatusCode))
 	}
 }
