@@ -7,3 +7,4 @@ solrdump*.rpm
 /*.ndj
 /.idea
 /httplive.db
+.DS_Store

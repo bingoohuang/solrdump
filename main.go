@@ -14,16 +14,17 @@ import (
 	"os"
 	"time"
 
+	"github.com/bingoohuang/gg/pkg/ctx"
 	"github.com/bingoohuang/gg/pkg/jihe"
 	"github.com/bingoohuang/gg/pkg/osx"
 	"github.com/bingoohuang/gg/pkg/rotate"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/gg/pkg/vars"
+	"github.com/gobars/solrdump/pester"
 
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/jj"
-	"github.com/sethgrid/pester"
 )
 
 func (a App) Usage() string {
@@ -67,8 +68,8 @@ type App struct {
 }
 
 func main() {
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	a := &App{Context: ctx, ContextCancel: cancelFunc}
+	c, cancelFunc := ctx.RegisterSignals(context.Background())
+	a := &App{Context: c, ContextCancel: cancelFunc}
 	flagparse.Parse(a)
 
 	log.Printf("started")
@@ -85,7 +86,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("error: %v", err)
 		}
-		if cursor == a.GetCursor() {
+		if cursor == a.GetCursor() || a.Context.Err() != nil {
 			break
 		}
 
@@ -137,7 +138,7 @@ func (a *App) SetCursor(mark string) {
 func (a App) ReachedMax() bool { return a.Max > 0 && a.total >= a.Max }
 
 func (a *App) Dump(url string) (string, error) {
-	resp, err := pester.Get(url)
+	resp, err := pester.GetContext(a.Context, url)
 	if err != nil {
 		return "", fmt.Errorf("http %s: %w", url, err)
 	}
