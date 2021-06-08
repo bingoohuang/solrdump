@@ -62,9 +62,7 @@ type App struct {
 	ContextCancel context.CancelFunc
 	closers       []io.Closer
 
-	printer     *jihe.DelayChan
-	linkPrinter *jihe.DelayChan
-	httpPrinter *jihe.DelayChan
+	printer *jihe.DelayChan
 }
 
 func main() {
@@ -79,7 +77,7 @@ func main() {
 		link := a.CreateLink()
 		if a.Verbose >= 2 {
 			humanLink, _ := url.QueryUnescape(link)
-			a.linkPrinter.Put(fmt.Sprintf("solr query: %q", humanLink))
+			a.printer.PutKey("link", fmt.Sprintf("solr query: %q", humanLink))
 		}
 
 		cursor, err := a.Dump(link)
@@ -188,8 +186,6 @@ func (a *App) PostProcess() {
 	}
 	interval := time.Duration(ss.Ifi(a.Verbose >= 1, 5, 10)) * time.Second
 	a.printer = jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
-	a.linkPrinter = jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
-	a.httpPrinter = jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
 
 	a.outputFn = a.createOutputFn()
 
@@ -209,7 +205,7 @@ func (a *App) createOutputFn() func(doc []byte) {
 	for _, out := range a.Output {
 		if uri, ok := rest.MaybeURL(out); ok {
 			fns = append(fns, func(doc []byte) {
-				outputHttp(uri, a.Verbose, doc, a.httpPrinter)
+				outputHttp(uri, a.Verbose, doc, a.printer)
 			})
 		} else {
 			p := osx.ExpandHome(out)
@@ -255,10 +251,10 @@ func outputHttp(uri0 string, verbose int, doc []byte, printer *jihe.DelayChan) {
 
 	if verbose >= 2 {
 		body, _ := rest.ReadCloseBody(resp)
-		printer.Put(fmt.Sprintf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body))
+		printer.PutKey("response", fmt.Sprintf("sent cost: %s status: %d, body: %s", cost, resp.StatusCode, body))
 	} else if verbose >= 1 {
 		_ = rest.DiscardCloseBody(resp)
-		printer.Put(fmt.Sprintf("sent cost: %s status: %d", cost, resp.StatusCode))
+		printer.PutKey("response", fmt.Sprintf("sent cost: %s status: %d", cost, resp.StatusCode))
 	}
 }
 

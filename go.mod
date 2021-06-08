@@ -3,6 +3,6 @@ module github.com/gobars/solrdump
 go 1.16
 
 require (
-	github.com/bingoohuang/gg v0.0.0-20210608052401-e386a5beb73e
+	github.com/bingoohuang/gg v0.0.0-20210608054258-34a8b64e3765
 	github.com/bingoohuang/jj v0.0.0-20210608032314-a03ed7fb3553
 )

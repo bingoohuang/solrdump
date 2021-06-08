@@ -1,6 +1,6 @@
 github.com/bingoohuang/gg v0.0.0-20210608031951-72884199b0ac/go.mod h1:kKNUAtRrABOvh5ztjh9Q5qtJBkx0sxwCHBQDBgWPhbw=
-github.com/bingoohuang/gg v0.0.0-20210608052401-e386a5beb73e h1:/9KPthyRJftY8ZSovKjdPGjZkXhiPKNCq+cQIe2XJEg=
-github.com/bingoohuang/gg v0.0.0-20210608052401-e386a5beb73e/go.mod h1:kKNUAtRrABOvh5ztjh9Q5qtJBkx0sxwCHBQDBgWPhbw=
+github.com/bingoohuang/gg v0.0.0-20210608054258-34a8b64e3765 h1:WwpJQ9QVy2pBHfZmowgWB37+kkZiHLCTaw5ML5+kQBI=
+github.com/bingoohuang/gg v0.0.0-20210608054258-34a8b64e3765/go.mod h1:kKNUAtRrABOvh5ztjh9Q5qtJBkx0sxwCHBQDBgWPhbw=
 github.com/bingoohuang/jj v0.0.0-20210608032314-a03ed7fb3553 h1:xMT1AwChEJqcSlw4mtMWkiyJGb4rQweQ+VsVhYKogtk=
 github.com/bingoohuang/jj v0.0.0-20210608032314-a03ed7fb3553/go.mod h1:bV9nOhOo9pY9zfWfXnzmkTRYHNKU2bIoz5asX5Xldyw=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
