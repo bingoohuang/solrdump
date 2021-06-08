@@ -103,20 +103,14 @@ func main() {
 	log.Printf("process %d docs, rate %f docs/s, cost %s", a.total, float64(a.total)/cost.Seconds(), cost)
 }
 
-func (a App) createQuery() url.Values {
-	v := url.Values{}
-	v.Set("q", a.Q)
-	v.Set("sort", "id asc")
-	v.Set("rows", fmt.Sprintf("%d", a.Rows))
-	v.Set("fl", "")
-	v.Set("wt", "json")
-
-	if a.Cursor {
-		v.Set(cursorMark, "*")
-	} else {
-		v.Set("start", "0")
-	}
-	return v
+func (a App) createQuery() {
+	a.query = url.Values{}
+	a.query.Set("q", a.Q)
+	a.query.Set("sort", "id asc")
+	a.query.Set("rows", fmt.Sprintf("%d", a.Rows))
+	a.query.Set("fl", "")
+	a.query.Set("wt", "json")
+	a.SetCursor("*")
 }
 
 const cursorMark = "cursorMark"
@@ -187,7 +181,7 @@ func (a *App) PostProcess() {
 		a.Rows = a.Max
 	}
 
-	a.query = a.createQuery()
+	a.createQuery()
 
 	if len(a.RemoveFields) == 0 {
 		a.RemoveFields = []string{"_version_"}
