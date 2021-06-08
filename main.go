@@ -42,7 +42,7 @@ Usage of %s (%s):
   -v             Verbose, -vv -vvv
 `, os.Args[0], a.VersionInfo())
 }
-func (App) VersionInfo() string { return "0.1.4 2021-06-08 14:45:21" }
+func (App) VersionInfo() string { return "0.1.5 2021-06-08 19:40:50" }
 
 type App struct {
 	Server       string `required:"true"`
