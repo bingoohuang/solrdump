@@ -422,28 +422,28 @@ func (c *Client) log(ctx context.Context, e ErrEntry) {
 	}
 }
 
-// Do provides the same functionality as http.Client.Do
+// DoContext provides the same functionality as http.Client.Do
 func (c *Client) DoContext(ctx context.Context, req *http.Request) (*http.Response, error) {
 	return c.pester(ctx, params{method: methodDo, req: req, verb: req.Method, url: req.URL.String()})
 }
 
-// Get provides the same functionality as http.Client.Get
+// GetContext provides the same functionality as http.Client.Get
 func (c *Client) GetContext(ctx context.Context, url string) (*http.Response, error) {
 	return c.pester(ctx, params{method: methodGet, url: url, verb: http.MethodGet})
 }
 
-// Head provides the same functionality as http.Client.Head
+// HeadContext provides the same functionality as http.Client.Head
 func (c *Client) HeadContext(ctx context.Context, url string) (*http.Response, error) {
 	return c.pester(ctx, params{method: methodHead, url: url, verb: http.MethodHead})
 }
 
-// Post provides the same functionality as http.Client.Post
+// PostContext provides the same functionality as http.Client.Post
 func (c *Client) PostContext(ctx context.Context, url string, bodyType string, body io.Reader) (*http.Response, error) {
 	return c.pester(ctx, params{method: methodPost, url: url, bodyType: bodyType,
 		body: ioutil.NopCloser(body), verb: http.MethodPost})
 }
 
-// PostForm provides the same functionality as http.Client.PostForm
+// PostFormContext provides the same functionality as http.Client.PostForm
 func (c *Client) PostFormContext(ctx context.Context, url string, data url.Values) (*http.Response, error) {
 	return c.pester(ctx, params{method: methodPostForm, url: url, bodyType: contentTypeFormURLEncoded,
 		body: ioutil.NopCloser(strings.NewReader(data.Encode())), verb: http.MethodPost})

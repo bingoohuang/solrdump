@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/bingoohuang/gg/pkg/ctx"
@@ -32,7 +33,7 @@ func (a App) Usage() string {
 Usage of %s (%s):
   -max int       Max number of rows (default 10)
   -q string      SOLR query (default "*:*")
-  -rows int      Number of rows returned per request (default 1000)
+  -rows int      Number of rows returned per request (default 10000)
   -server string SOLR server with index name, eg. localhost:8983/solr/example
   -version       Show version and exit
   -remove-fields Remove fields, _version_ defaulted
@@ -47,7 +48,7 @@ type App struct {
 	Server       string `required:"true"`
 	Q            string `val:"*:*"`
 	Max          int    `val:"10"`
-	Rows         int    `val:"1000"`
+	Rows         int    `val:"10000"`
 	Version      bool
 	Cursor       bool `val:"true"`
 	RemoveFields []string
@@ -61,8 +62,21 @@ type App struct {
 	Context  context.Context
 	closers  []io.Closer
 
-	printer *jihe.DelayChan
+	printer    Printer
+	ResponseCh chan Response
 }
+
+type Printer interface {
+	io.Closer
+	Put(v interface{})
+	PutKey(k string, v interface{})
+}
+
+type LogPrinter struct{}
+
+func (l LogPrinter) Close() error                   { return nil }
+func (l LogPrinter) Put(v interface{})              { log.Print(v) }
+func (l LogPrinter) PutKey(k string, v interface{}) { log.Print(v) }
 
 func main() {
 	c, cancelFunc := ctx.RegisterSignals(context.Background())
@@ -71,6 +85,9 @@ func main() {
 
 	log.Printf("started")
 	start := time.Now()
+
+	var wg sync.WaitGroup
+	a.goOutput(&wg)
 
 	for !a.ReachedMax() {
 		link := a.CreateLink()
@@ -90,6 +107,9 @@ func main() {
 		a.SetCursor(cursor)
 	}
 
+	close(a.ResponseCh)
+	wg.Wait()
+
 	for _, c := range a.closers {
 		_ = c.Close()
 	}
@@ -97,6 +117,18 @@ func main() {
 	cancelFunc()
 	cost := time.Since(start)
 	log.Printf("process %d docs, rate %f docs/s, cost %s", a.total, float64(a.total)/cost.Seconds(), cost)
+}
+
+func (a *App) goOutput(wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for resp := range a.ResponseCh {
+			for _, doc := range resp.Docs {
+				a.outputFn(doc)
+			}
+		}
+	}()
 }
 
 func (a *App) createQuery() {
@@ -146,13 +178,7 @@ func (a *App) Dump(url string) (string, error) {
 		return "", fmt.Errorf("decode: %w", err)
 	}
 
-	for _, doc := range r.Response.Docs {
-		for _, fl := range a.RemoveFields {
-			doc, _ = jj.DeleteBytes(doc, fl, jj.SetOptions{ReplaceInPlace: true})
-		}
-		a.outputFn(doc)
-	}
-
+	a.ResponseCh <- r.Response
 	docs := len(r.Response.Docs)
 	if docs > 0 {
 		a.total += docs
@@ -183,8 +209,15 @@ func (a *App) PostProcess() {
 		a.RemoveFields = []string{"_version_"}
 	}
 	interval := time.Duration(ss.Ifi(a.Verbose >= 1, 5, 10)) * time.Second
-	a.printer = jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
-	a.closers = append(a.closers, a.printer)
+
+	if a.Verbose <= 2 {
+		printer := jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
+		a.closers = append(a.closers, printer)
+		a.printer = printer
+	} else {
+		a.printer = &LogPrinter{}
+	}
+	a.ResponseCh = make(chan Response, 100)
 	a.outputFn = a.createOutputFn()
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -229,7 +262,7 @@ type JsonValue struct {
 
 func (j *JsonValue) Value(name, _ string) interface{} { return jj.GetBytes(j.Doc, name).String() }
 
-func outputHttp(uri0 string, verbose int, doc []byte, printer *jihe.DelayChan) {
+func outputHttp(uri0 string, verbose int, doc []byte, printer Printer) {
 	// 从doc中提取并替换uri中的变量
 	// 例如uri为`127.0.0.1:9092/zz/docs?routing=@id`，则从doc（JSON格式)中取出key是id的值替换进去
 	uri := vars.ParseExpr(uri0).Eval(&JsonValue{Doc: doc}).(string)
@@ -238,7 +271,8 @@ func outputHttp(uri0 string, verbose int, doc []byte, printer *jihe.DelayChan) {
 	}
 
 	start := time.Now()
-	resp, err := pester.Post(uri, "application/json; charset=utf-8", bytes.NewReader(doc))
+
+	resp, err := pester.Post(uri, rest.ContentTypeJSON, bytes.NewReader(doc))
 	cost := time.Since(start)
 	if err != nil {
 		log.Printf("sent to %s error %v", uri, err)
