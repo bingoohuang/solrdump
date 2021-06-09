@@ -189,3 +189,22 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
     $ curl -X POST "http://127.0.0.1:8983/solr/collection1/update?commit=true&wt=json" -H "Content-Type: text/xml" --data-binary "<delete><id>60bad0a3f46639d20ed3e855</id></delete>"
     {"responseHeader":{"status":0,"QTime":10}}
     ```
+3. [ElasticSearch bulk api](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html)
+    ```http
+    POST /zz/_bulk HTTP/1.1
+    Host: 192.168.126.18:9202
+    Content-Type: application/json
+    Content-Length: 214
+    
+    { "index" : { "_type" : "docs","_routing":1 } }
+    { "zzCode": 1, "field1" : "value10","field2" : "value20" }
+    { "index" : { "_type" : "docs","_routing":2 } }
+    { "zzCode": 2, "field1" : "value11","field2" : "value21" }
+ 
+    ```
+
+    resposne:
+
+    ```json
+    {"took":95,"errors":false,"items":[{"index":{"_index":"zz","_type":"docs","_id":"jSQE73kBuRYpTrL3mtJh","_version":1,"result":"created","_shards":{"total":2,"successful":2,"failed":0},"_seq_no":0,"_primary_term":1,"status":201}},{"index":{"_index":"zz","_type":"docs","_id":"jiQE73kBuRYpTrL3mtJh","_version":1,"result":"created","_shards":{"total":2,"successful":2,"failed":0},"_seq_no":0,"_primary_term":1,"status":201}}]}
+   ```
