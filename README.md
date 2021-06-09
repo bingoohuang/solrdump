@@ -4,8 +4,8 @@ Export documents from a SOLR index as JSON, fast and simply from the command lin
 
 ## Requirements
 
-SOLR 4.7 or higher, since the cursor mechanism was introduced with SOLR 4.7
-([2014-02-25](https://archive.apache.org/dist/lucene/solr/4.7.0/)) &mdash; see
+SOLR 4.7 or higher, since the cursor mechanism
+introduced ([2014-02-25](https://archive.apache.org/dist/lucene/solr/4.7.0/)) &mdash; see
 also [efficient deep paging with cursors](https://solr.pl/en/2014/03/10/solr-4-7-efficient-deep-paging/).
 
 ## Installation
@@ -18,6 +18,7 @@ also [efficient deep paging with cursors](https://solr.pl/en/2014/03/10/solr-4-7
 1. `_version_` deleted from the result
 2. `output="http://127.0.0.1:9092/zz/docs?routing=@path"` `@path` in the url will be evaluated by `{GjsonPath}`
    , [Syntax](https://github.com/bingoohuang/jj/blob/master/SYNTAX.md)
+3. `output="http://127.0.0.1:9092/zz/_bulk?routing=@path"` will change to bulk mode for elasticsearch automatically.
 
 ## Usage
 
@@ -36,8 +37,8 @@ Usage of solrdump (0.1.2):
 ### Print docs
 
 ```shell
-$ solrdump -server 192.168.126.16:8983/solr/zz -max 3          
-2021/06/03 17:57:50 http://192.168.126.16:8983/solr/zz/select?cursorMark=%2A&fl=&q=%2A%3A%2A&rows=3&sort=id+asc&wt=json
+$ solrdump -server 192.168.2.6:8983/solr/zz -max 3          
+2021/06/03 17:57:50 http://192.168.2.6:8983/solr/zz/select?cursorMark=%2A&fl=&q=%2A%3A%2A&rows=3&sort=id+asc&wt=json
 {"dataType":"INTEGRATION","id":"000007c8-3d83-47c7-b9f0-1e0d15670599","createdDate":"2020-08-06T06:49:37Z"}
 {"dataType":"MANUAL","id":"00004d53-d76d-43c3-906d-90ff475bd1a2","createdDate":"2021-05-10T08:14:14Z"}
 {"dataType":"MANUAL","id":"000070fe-309f-4755-998e-2445cc66ef9f","createdDate":"2021-05-10T08:14:14Z"}
@@ -47,16 +48,16 @@ $ solrdump -server 192.168.126.16:8983/solr/zz -max 3
 ### Write to elastic search
 
 ```sh
-$ solrdump -server 192.168.126.16:8983/solr/licenseIndex -max 10 -vv -output "192.168.126.18:9202/license/docs?routing=@holderIdentityNum.0"
+$ solrdump -server 192.168.2.6:8983/solr/licenseIndex -max 10 -vv -output "192.168.2.8:9202/license/docs?routing=@holderIdentityNum.0"
 2021/06/08 14:30:53 started
 2021/06/08 14:30:58 fetched 10/509311 docs
-2021/06/08 14:30:58 solr query: "http://192.168.126.16:8983/solr/licenseIndex/select?cursorMark=*&fl=&q=*:*&rows=10&sort=id asc&wt=json"
-2021/06/08 14:30:58 http uri: http://192.168.126.18:9202/license/docs?routing=441421201510165436
+2021/06/08 14:30:58 solr query: "http://192.168.2.6:8983/solr/licenseIndex/select?cursorMark=*&fl=&q=*:*&rows=10&sort=id asc&wt=json"
+2021/06/08 14:30:58 http uri: http://192.168.2.8:9202/license/docs?routing=441421201510165436
 2021/06/08 14:30:58 sent cost: 5.175523ms status: 201, body: {"_index":"license","_type":"docs","_id":"rB1R6nkBuRYpTrL3HTzU","_version":1,"result":"created","_shards":{"total":1,"successful":1,"failed":0},"_seq_no":30989363,"_primary_term":3}
 2021/06/08 14:31:03 process 10 docs, rate 0.999881 docs/s, cost 10.001191743s
 ```
 
-then [elasticsearch query on 441421201510165436](http://192.168.126.18:9202/license/_search?routing=441421201510165436&q=holderIdentityNum:441421201510165436)
+then [elasticsearch query on 441421201510165436](http://192.168.2.8:9202/license/_search?routing=441421201510165436&q=holderIdentityNum:441421201510165436)
 can be performed.
 
 ## Resources
@@ -87,7 +88,7 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
 > document returned to the client are used to compute a "mark" representing a
 > logical point in the ordered space of sort values.
 
-`http://192.168.126.16:8983/solr/zz/select?q=*:*&wt=json&cursorMark=*&sort=id asc`
+`http://192.168.2.6:8983/solr/zz/select?q=*:*&wt=json&cursorMark=*&sort=id asc`
 
 ```json
 {
@@ -192,7 +193,7 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
 3. [ElasticSearch bulk api](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html)
     ```http
     POST /zz/_bulk HTTP/1.1
-    Host: 192.168.126.18:9202
+    Host: 192.168.2.8:9202
     Content-Type: application/json
     Content-Length: 214
     
@@ -203,8 +204,21 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
  
     ```
 
-    resposne:
+    response:
 
     ```json
     {"took":95,"errors":false,"items":[{"index":{"_index":"zz","_type":"docs","_id":"jSQE73kBuRYpTrL3mtJh","_version":1,"result":"created","_shards":{"total":2,"successful":2,"failed":0},"_seq_no":0,"_primary_term":1,"status":201}},{"index":{"_index":"zz","_type":"docs","_id":"jiQE73kBuRYpTrL3mtJh","_version":1,"result":"created","_shards":{"total":2,"successful":2,"failed":0},"_seq_no":0,"_primary_term":1,"status":201}}]}
-   ```
+    ```
+
+    performance pk, 10000 dos, bulk mode use 1.7s other than 19s in normal one by one insert mode:
+
+   ```sh
+    # solrdump -server 192.168.2.6:8983/solr/licenseIndex -output "192.168.2.8:9202/license/docs?routing=@holderIdentityNum.0" -max 10000
+    2021/06/09 13:20:05 started
+    2021/06/09 13:20:15 fetched 10000/509311 docs
+    2021/06/09 13:20:24 process 10000 docs, rate 517.326652 docs/s, cost 19.330146562s
+    # solrdump -server 192.168.2.6:8983/solr/licenseIndex -output "192.168.2.8:9202/license/_bulk?routing=@holderIdentityNum.0" -max 10000
+    2021/06/09 13:24:35 started
+    2021/06/09 13:24:37 fetched 10000/509311 docs
+    2021/06/09 13:24:37 process 10000 docs, rate 5784.721384 docs/s, cost 1.728691727s
+    ```
