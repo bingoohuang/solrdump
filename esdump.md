@@ -6,7 +6,7 @@ Elasticsearch 经典分页问题
 
 ## 新建索引
 
-![img.png](../../_images/img_es_create_index.png)
+![img.png](_images/img_es_create_index.png)
 
 ## 创建100条随机数据
 

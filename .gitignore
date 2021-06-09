@@ -8,3 +8,4 @@ solrdump*.rpm
 /.idea
 /httplive.db
 .DS_Store
+/badger-zz/

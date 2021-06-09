@@ -1,0 +1,1 @@
+{"idCode":"@uuid","holderName":"@姓名","holderNum":"@身份证_keep","areaCode":"@regex([0-9]{6})","createdDate": "@random_time(yyyy-MM-ddTHH:mm:ssZ)"}

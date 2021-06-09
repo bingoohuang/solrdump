@@ -3,68 +3,104 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/badgerdb"
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/jj"
-	"github.com/gobars/solrdump/badger"
 	"github.com/gobars/solrdump/pester"
-	"net/url"
-	"path"
+	"io"
+	"log"
+	"os"
 	"strings"
 	"time"
 )
 
+func (Arg) VersionInfo() string { return "0.1.0 2021-06-09 22:52:44" }
+
+func (a Arg) Usage() string {
+	return fmt.Sprintf(`
+Usage of %s (%s):
+  -es    string  Elasticsearch address, default 127.0.0.1:9202
+  -index string  Index name, default zz
+  -type  string  Index type, default _doc
+  -scroll string Scroll time ttl, default 1m
+  -max      int  Max docs to dump, default 10000
+  -query string  Query json, like {"size":10000,"_source":["holderNum"]}
+  -version       Show version and exit
+  -filter string Filter expression, like hits.hits.#._source.holderIdentityNum.0, default hits.hits.#._source
+  -out           Out, empty/stdout to stdout, else to badger path.
+  -v             Verbose, -vv -vvv
+  -print-badger  Print Badger and exit
+`, os.Args[0], a.VersionInfo())
+}
+
 type Arg struct {
-	Es     string `val:"192.168.126.5:9202"`
-	Index  string `val:"license"`
-	Type   string `val:"docs"`
-	Batch  int    `val:"10000"`
-	Max    int64  `val:"100000"`
-	Filter string `val:"hits.hits.#._source.holderIdentityNum.0"`
-	Badger string `val:"es-badger-db"`
+	Es          string `val:"127.0.0.1:9200"`
+	Index       string `val:"zz"`
+	Type        string `val:"_doc"`
+	Scroll      string `val:"1m"`
+	Max         int64  `val:"10000"`
+	Query       string
+	Filter      string `val:"hits.hits.#._source"`
+	Out         string
+	PrintBadger bool
 }
 
 func main() {
-	arg := &Arg{}
-	flagparse.Parse(arg)
+	a := &Arg{}
+	flagparse.Parse(a)
 
-	uri, _ := UrlJoin(arg.Es, map[string]string{"scroll": "1m"}, arg.Index, arg.Type, `/_search`)
+	var out Out
 
+	if a.Out == "" || a.Out == "stdout" {
+		out = &Stdout{}
+	} else {
+		bdb, err := NewBadgerOutput(a.Out)
+		if err != nil {
+			log.Panicf("failed to create badger out: %v", err)
+		}
+
+		if a.PrintBadger {
+			bdb.Print()
+			os.Exit(0)
+		}
+		out = bdb
+	}
+	defer out.Close()
+
+	baseURL := rest.NewURL(a.Es)
 	//uri := `http://192.168.126.5:9202/license/docs/_search?scroll=1m`
-	query := fmt.Sprintf(`{"size":%d,"_source":["holderIdentityNum"]}`, arg.Batch)
+	uri, _ := baseURL.Paths(a.Index, a.Type, `/_search`).Query("scroll", a.Scroll).Build()
 
 	start := time.Now()
-	r, err := pester.Post(uri, rest.ContentTypeJSON, strings.NewReader(query))
+	r, err := pester.Post(uri, rest.ContentTypeJSON, strings.NewReader(a.Query))
 	cost := time.Since(start)
 	if err != nil {
 		panic(err)
 	}
 
-	scrollUri, _ := UrlJoin(arg.Es, nil, "/_search/scroll")
+	scrollUri, _ := baseURL.Paths("/_search/scroll").Build()
 	payloadTemplate := []byte(`{"scroll_id":"","scroll":"1m"}`)
 	totalHits := int64(0)
-
-	db, _ := badger.Open(arg.Badger)
-	defer db.Close()
-	index := uint64(0)
 
 	for {
 		body, _ := rest.ReadCloseBody(r)
 		hits := jj.GetBytes(body, "hits.hits.#").Int()
-		if hits <= 0 || (arg.Max > 0 && totalHits >= arg.Max) {
-			break
-		}
-
 		totalHits += hits
+		log.Printf("total hists %d, cost %s", totalHits, cost)
 
-		result := jj.GetBytes(body, arg.Filter)
+		result := jj.GetBytes(body, a.Filter)
 		result.ForEach(func(_, c jj.Result) bool {
-			db.Set(badger.Uint64ToBytes(index), []byte(c.String()))
-			index++
+			if err := out.Output(c.String()); err != nil {
+				log.Printf("failed to out result: %v", err)
+				return false
+			}
 			return true
 		})
 
-		fmt.Printf("total hists %d, cost %s\n", totalHits, cost)
+		if hits <= 0 || (a.Max > 0 && totalHits >= a.Max) {
+			break
+		}
 
 		scrollID := jj.GetBytes(body, "_scroll_id")
 		payload, _ := jj.SetBytes(payloadTemplate, "scroll_id", scrollID.String())
@@ -76,31 +112,50 @@ func main() {
 		}
 		cost += time.Since(start)
 	}
-
-	fmt.Printf("total hists %d, cost %s\n", totalHits, cost)
 }
 
-func UrlJoin(basePath string, query map[string]string, paths ...string) (string, error) {
-	basePath, err := rest.FixURI(basePath)
+type Out interface {
+	io.Closer
+	Output(doc string) error
+}
+
+type Stdout struct {
+	Index uint64
+}
+
+func (s *Stdout) Close() error { return nil }
+func (s *Stdout) Output(doc string) error {
+	s.Index++
+	log.Printf("%010d:%s", s.Index, doc)
+	return nil
+}
+
+type BadgerOutput struct {
+	Index uint64
+	DB    *badgerdb.Badger
+}
+
+func (b *BadgerOutput) Close() error { return b.DB.Close() }
+func (b *BadgerOutput) Output(doc string) error {
+	if err := b.DB.Set(badgerdb.Uint64ToBytes(b.Index), []byte(doc)); err != nil {
+		return err
+	}
+	b.Index++
+	return nil
+}
+
+func (b *BadgerOutput) Print() {
+	b.DB.Walk(func(k, v []byte) error {
+		fmt.Printf("%d: %s\n", badgerdb.BytesToUint64(k), v)
+		return nil
+	})
+}
+
+func NewBadgerOutput(path string) (*BadgerOutput, error) {
+	db, err := badgerdb.New(path, false)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	u, err := url.Parse(basePath)
-	if err != nil {
-		return "", fmt.Errorf("invalid url")
-	}
-
-	p2 := append([]string{u.Path}, paths...)
-	u.Path = path.Join(p2...)
-
-	if query != nil {
-		q := u.Query()
-		for k, v := range query {
-			q.Set(k, v)
-		}
-		u.RawQuery = q.Encode()
-	}
-
-	return u.String(), nil
+	return &BadgerOutput{DB: db}, err
 }
