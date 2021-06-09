@@ -22,7 +22,7 @@ import (
 
 func main() {
 	c, cancelFunc := ctx.RegisterSignals(context.Background())
-	a := &App{Context: c, wg: &sync.WaitGroup{}}
+	a := &App{Context: c, outputWg: &sync.WaitGroup{}}
 	flagparse.Parse(a)
 
 	log.Printf("started")
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	close(a.ResponseCh)
-	a.wg.Wait()
+	a.outputWg.Wait()
 
 	for _, c := range a.closers {
 		_ = c.Close()
@@ -61,9 +61,9 @@ func main() {
 }
 
 func (a *App) StartOutput() {
-	a.wg.Add(1)
+	a.outputWg.Add(1)
 	go func() {
-		defer a.wg.Done()
+		defer a.outputWg.Done()
 
 		for resp := range a.ResponseCh {
 			a.processResponse(resp)

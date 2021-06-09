@@ -49,5 +49,5 @@ type App struct {
 	printer    Printer
 	ResponseCh chan Response
 
-	wg *sync.WaitGroup
+	outputWg *sync.WaitGroup
 }
