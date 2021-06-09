@@ -64,6 +64,8 @@ func main() {
 			return true
 		})
 
+		fmt.Printf("total hists %d, cost %s\n", totalHits, cost)
+
 		scrollID := jj.GetBytes(body, "_scroll_id")
 		payload, _ := jj.SetBytes(payloadTemplate, "scroll_id", scrollID.String())
 
