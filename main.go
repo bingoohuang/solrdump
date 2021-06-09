@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -42,7 +43,7 @@ Usage of %s (%s):
   -v             Verbose, -vv -vvv
 `, os.Args[0], a.VersionInfo())
 }
-func (App) VersionInfo() string { return "0.1.5 2021-06-08 19:40:50" }
+func (App) VersionInfo() string { return "0.1.6 2021-06-09 11:37:38" }
 
 type App struct {
 	Server       string `required:"true"`
@@ -76,7 +77,7 @@ type LogPrinter struct{}
 
 func (l LogPrinter) Close() error                   { return nil }
 func (l LogPrinter) Put(v interface{})              { log.Print(v) }
-func (l LogPrinter) PutKey(k string, v interface{}) { log.Print(v) }
+func (l LogPrinter) PutKey(k string, v interface{}) { log.Print(fmt.Sprintf("%s: %v", k, v)) }
 
 func main() {
 	c, cancelFunc := ctx.RegisterSignals(context.Background())
@@ -235,11 +236,14 @@ func (a *App) PostProcess() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 }
 
+type closeFn func()
+
+func (f closeFn) Close() error { f(); return nil }
+
 func (a *App) createOutputFn() func(doc []byte) {
 	if len(a.Output) == 0 {
 		return func(doc []byte) { fmt.Println(string(doc)) }
 	}
-
 	if len(a.Output) == 1 && a.Output[0] == "noop" {
 		return func(doc []byte) {}
 	}
@@ -247,9 +251,19 @@ func (a *App) createOutputFn() func(doc []byte) {
 	var fns []func(doc []byte)
 	for _, out := range a.Output {
 		if uri, ok := rest.MaybeURL(out); ok {
-			fns = append(fns, func(doc []byte) {
-				outputHttp(uri, a.Verbose, doc, a.printer)
-			})
+			var fn func(doc []byte)
+			if strings.Contains(uri, "/_bulk") { // support es bulk mode
+				docCh := make(chan []byte, 100)
+				fn = func(doc []byte) { docCh <- doc }
+				var wg sync.WaitGroup
+				wg.Add(1)
+				go a.elasticSearchBulk(uri, docCh, &wg)
+				a.closers = append(a.closers, closeFn(func() { close(docCh); wg.Wait() }))
+			} else {
+				fn = func(doc []byte) { outputHttp(uri, a.Verbose, doc, a.printer) }
+			}
+
+			fns = append(fns, fn)
 		} else {
 			p := osx.ExpandHome(out)
 			w := rotate.NewQueueWriter(a.Context, p, 1000, false)
@@ -264,6 +278,63 @@ func (a *App) createOutputFn() func(doc []byte) {
 	return func(doc []byte) {
 		for _, f := range fns {
 			f(doc)
+		}
+	}
+}
+
+func (a *App) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	u, _ := url.Parse(uri)
+	query := u.Query()
+	routing := query.Get("routing")
+	var routingExpr vars.Subs
+	if routing != "" {
+		query.Del("routing")
+		routingExpr = vars.ParseExpr(routing)
+	}
+	u.RawQuery = query.Encode()
+	uri = u.String()
+
+	for {
+		b, ok := numOrTicker(docCh, routingExpr, 100)
+		if b.Len() > 0 {
+			outputHttp(uri, a.Verbose, b.Bytes(), a.printer)
+		}
+		if !ok {
+			return
+		}
+	}
+}
+
+func numOrTicker(docCh chan []byte, routingExpr vars.Subs, batchNum int) (*bytes.Buffer, bool) {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	num := 0
+	b := &bytes.Buffer{}
+
+	for {
+		select {
+		case doc, ok := <-docCh:
+			if !ok {
+				return b, false
+			}
+			if len(routingExpr) > 0 {
+				routing := routingExpr.Eval(&JsonValue{Doc: doc}).(string)
+				b.Write([]byte(`{"index":{"_type":"docs","_routing":"` + routing + `"}}`))
+			} else {
+				b.Write([]byte(`{"index":{"_type":"docs"}}`))
+			}
+
+			b.Write([]byte("\n"))
+			b.Write(doc)
+			b.Write([]byte("\n"))
+			if num++; num >= batchNum {
+				return b, true
+			}
+		case <-ticker.C:
+			return b, true
 		}
 	}
 }
@@ -292,7 +363,7 @@ func outputHttp(uri0 string, verbose int, doc []byte, printer Printer) {
 
 	defer rest.DiscardCloseBody(resp)
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 || verbose >= 2 {
 		printer.PutKey("request body", string(doc))
 	}
 
