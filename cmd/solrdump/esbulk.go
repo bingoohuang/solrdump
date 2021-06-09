@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (a *App) createBulkOutput(uri string) func(doc []byte) {
+func (a *Arg) createBulkOutput(uri string) func(doc []byte) {
 	if !strings.Contains(uri, "/_bulk") {
 		return nil
 	}
@@ -27,7 +27,7 @@ func (a *App) createBulkOutput(uri string) func(doc []byte) {
 	return fn
 }
 
-func (a *App) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGroup) {
+func (a *Arg) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	u, _ := url.Parse(uri)

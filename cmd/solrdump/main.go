@@ -22,7 +22,7 @@ import (
 
 func main() {
 	c, cancelFunc := ctx.RegisterSignals(context.Background())
-	a := &App{Context: c, outputWg: &sync.WaitGroup{}}
+	a := &Arg{Context: c, outputWg: &sync.WaitGroup{}}
 	flagparse.Parse(a)
 
 	log.Printf("started")
@@ -60,7 +60,7 @@ func main() {
 	log.Printf("process %d docs, rate %f docs/s, cost %s", a.total, float64(a.total)/cost.Seconds(), cost)
 }
 
-func (a *App) StartOutput() {
+func (a *Arg) StartOutput() {
 	a.outputWg.Add(1)
 	go func() {
 		defer a.outputWg.Done()
@@ -71,7 +71,7 @@ func (a *App) StartOutput() {
 	}()
 }
 
-func (a *App) processResponse(resp Response) {
+func (a *Arg) processResponse(resp Response) {
 	for _, doc := range resp.Docs {
 		for _, v := range a.RemoveFields {
 			if vv, err := jj.DeleteBytes(doc, v, jj.SetOptions{ReplaceInPlace: true}); err != nil {
@@ -84,7 +84,7 @@ func (a *App) processResponse(resp Response) {
 	}
 }
 
-func (a *App) PostProcess() {
+func (a *Arg) PostProcess() {
 	var err error
 
 	if a.baseURL, err = rest.FixURI(a.Server); err != nil {
@@ -115,7 +115,7 @@ func (a *App) PostProcess() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 }
 
-func (a *App) createOutputFn() func(doc []byte) {
+func (a *Arg) createOutputFn() func(doc []byte) {
 	if len(a.Output) == 0 {
 		return func(doc []byte) { fmt.Println(string(doc)) }
 	}

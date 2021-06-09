@@ -10,11 +10,11 @@ import (
 	"net/url"
 )
 
-func (a App) createSolrLink() string {
+func (a Arg) createSolrLink() string {
 	return fmt.Sprintf("%s/select?%s", a.baseURL, a.query.Encode())
 }
 
-func (a *App) prepareSolrQuery() {
+func (a *Arg) prepareSolrQuery() {
 	a.query = url.Values{}
 	a.query.Set("q", a.Q)
 	a.query.Set("sort", "id asc")
@@ -24,7 +24,7 @@ func (a *App) prepareSolrQuery() {
 	a.SetCursor("*")
 }
 
-func (a *App) SolrDump(url string) (string, error) {
+func (a *Arg) SolrDump(url string) (string, error) {
 	resp, err := pester.GetContext(a.Context, url)
 	if err != nil {
 		return "", fmt.Errorf("http %s: %w", url, err)
@@ -59,21 +59,21 @@ func (a *App) SolrDump(url string) (string, error) {
 
 const cursorMark = "cursorMark"
 
-func (a App) GetCursor() string {
+func (a Arg) GetCursor() string {
 	if a.Cursor {
 		return a.query.Get(cursorMark)
 	}
 
 	return "na"
 }
-func (a *App) SetCursor(mark string) {
+func (a *Arg) SetCursor(mark string) {
 	if a.Cursor {
 		a.query.Set(cursorMark, mark)
 	} else {
 		a.query.Set("start", fmt.Sprintf("%d", a.total))
 	}
 }
-func (a App) ReachedMax() bool { return a.Max > 0 && a.total >= a.Max }
+func (a Arg) ReachedMax() bool { return a.Max > 0 && a.total >= a.Max }
 
 // SolrResponse is a SOLR response.
 type SolrResponse struct {

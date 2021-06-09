@@ -9,9 +9,9 @@ import (
 	"sync"
 )
 
-func (App) VersionInfo() string { return "0.1.7 2021-06-09 13:51:38" }
+func (Arg) VersionInfo() string { return "0.1.7 2021-06-09 13:51:38" }
 
-func (a App) Usage() string {
+func (a Arg) Usage() string {
 	return fmt.Sprintf(`
 Usage of %s (%s):
   -max int       Max number of rows (default 10)
@@ -27,7 +27,7 @@ Usage of %s (%s):
 `, os.Args[0], a.VersionInfo())
 }
 
-type App struct {
+type Arg struct {
 	Server       string `required:"true"`
 	Q            string `val:"*:*"`
 	Max          int    `val:"10"`
