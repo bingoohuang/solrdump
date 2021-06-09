@@ -35,6 +35,7 @@ func (b *Badger) Set(k, v []byte) error {
 
 func Open(path string) (*Badger, error) {
 	options := badger.DefaultOptions(path)
+	options.Logger = nil
 	db, err := badger.Open(options)
 	if err != nil {
 		return nil, err

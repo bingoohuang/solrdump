@@ -21,34 +21,14 @@ type Arg struct {
 	Batch  int    `val:"10000"`
 	Max    int64  `val:"100000"`
 	Filter string `val:"hits.hits.#._source.holderIdentityNum.0"`
-}
-
-func UrlJoin(basePath string, query map[string]string, paths ...string) (string, error) {
-	u, err := url.Parse(basePath)
-	if err != nil {
-		return "", fmt.Errorf("invalid url")
-	}
-
-	p2 := append([]string{u.Path}, paths...)
-	u.Path = path.Join(p2...)
-
-	if query != nil {
-		q := u.Query()
-		for k, v := range query {
-			q.Set(k, v)
-		}
-		u.RawQuery = q.Encode()
-	}
-
-	return u.String(), nil
+	Badger string `val:"es-badger-db"`
 }
 
 func main() {
 	arg := &Arg{}
 	flagparse.Parse(arg)
 
-	baseUrl, _ := rest.FixURI(arg.Es)
-	uri, _ := UrlJoin(baseUrl, map[string]string{"scroll": "1m"}, arg.Index, arg.Type, `/_search`)
+	uri, _ := UrlJoin(arg.Es, map[string]string{"scroll": "1m"}, arg.Index, arg.Type, `/_search`)
 
 	//uri := `http://192.168.126.5:9202/license/docs/_search?scroll=1m`
 	query := fmt.Sprintf(`{"size":%d,"_source":["holderIdentityNum"]}`, arg.Batch)
@@ -60,18 +40,18 @@ func main() {
 		panic(err)
 	}
 
-	scrollUri, _ := UrlJoin(baseUrl, nil, "/_search/scroll")
+	scrollUri, _ := UrlJoin(arg.Es, nil, "/_search/scroll")
 	payloadTemplate := []byte(`{"scroll_id":"","scroll":"1m"}`)
 	totalHits := int64(0)
 
-	db, _ := badger.Open("./zz.badger")
+	db, _ := badger.Open(arg.Badger)
 	defer db.Close()
 	index := uint64(0)
 
 	for {
 		body, _ := rest.ReadCloseBody(r)
 		hits := jj.GetBytes(body, "hits.hits.#").Int()
-		if hits <= 0 || totalHits >= arg.Max {
+		if hits <= 0 || (arg.Max > 0 && totalHits >= arg.Max) {
 			break
 		}
 
@@ -96,4 +76,29 @@ func main() {
 	}
 
 	fmt.Printf("total hists %d, cost %s\n", totalHits, cost)
+}
+
+func UrlJoin(basePath string, query map[string]string, paths ...string) (string, error) {
+	basePath, err := rest.FixURI(basePath)
+	if err != nil {
+		return "", err
+	}
+
+	u, err := url.Parse(basePath)
+	if err != nil {
+		return "", fmt.Errorf("invalid url")
+	}
+
+	p2 := append([]string{u.Path}, paths...)
+	u.Path = path.Join(p2...)
+
+	if query != nil {
+		q := u.Query()
+		for k, v := range query {
+			q.Set(k, v)
+		}
+		u.RawQuery = q.Encode()
+	}
+
+	return u.String(), nil
 }
