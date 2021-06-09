@@ -35,6 +35,7 @@ Usage of %s (%s):
   -max int       Max number of rows (default 10)
   -q string      SOLR query (default "*:*")
   -rows int      Number of rows returned per request (default 10000)
+  -bulk int      Number of rows in an elasticseach bulk (default 100)
   -server string SOLR server with index name, eg. localhost:8983/solr/example
   -version       Show version and exit
   -remove-fields Remove fields, _version_ defaulted
@@ -50,6 +51,7 @@ type App struct {
 	Q            string `val:"*:*"`
 	Max          int    `val:"10"`
 	Rows         int    `val:"10000"`
+	Bulk         int    `val:"100"`
 	Version      bool
 	Cursor       bool `val:"true"`
 	RemoveFields []string
@@ -253,7 +255,7 @@ func (a *App) createOutputFn() func(doc []byte) {
 		if uri, ok := rest.MaybeURL(out); ok {
 			var fn func(doc []byte)
 			if strings.Contains(uri, "/_bulk") { // support es bulk mode
-				docCh := make(chan []byte, 100)
+				docCh := make(chan []byte, a.Bulk)
 				fn = func(doc []byte) { docCh <- doc }
 				var wg sync.WaitGroup
 				wg.Add(1)
@@ -297,7 +299,7 @@ func (a *App) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGrou
 	uri = u.String()
 
 	for {
-		b, ok := numOrTicker(docCh, routingExpr, 100)
+		b, ok := numOrTicker(docCh, routingExpr, a.Bulk)
 		if b.Len() > 0 {
 			outputHttp(uri, a.Verbose, b.Bytes(), a.printer)
 		}
