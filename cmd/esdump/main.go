@@ -45,6 +45,7 @@ type Arg struct {
 	Query      string
 	Filter     string `val:"hits.hits.#._source"`
 	Out        string
+	Version    bool
 	ViewBadger int
 }
 
