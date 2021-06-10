@@ -50,3 +50,30 @@ Usage of esdump (0.1.0 2021-06-09 22:52:44):
 $ esdump -es 192.168.126.5:9202 -index license -type docs -query '{"size":10,"_source":["holderIdentityNum"]}' -filter 'hits.hits.#._source.holderIdentityNum.0' -max 10 -out bb-license         
 2021/06/10 10:43:10 total hists 10, cost 725.982604ms
 ```
+
+## badger open
+
+1. 18G 的 badgerdb ，打开需要1分钟时间。
+1. 18G 存储了6亿数据。
+
+```sh
+[root@fs04-192-168-126-5 bingoo]# esdump -out es-badger-db -view-badger 10
+2021/06/10 13:49:28 badgerdb es-badger-db openning
+2021/06/10 13:50:35 badgerdb es-badger-db opened
+2021/06/10 13:50:35 start to walk
+0: 627489197812144689
+1: 510064200811063514
+2: 644229200803277613
+3: 658758198006161655
+4: 710375198411203330
+5: 440938201007184668
+6: 521322197112095868
+7: 326202198810269571
+8: 368058199312158654
+9: 139705198201143344
+2021/06/10 13:50:35 end to walk
+[root@fs04-192-168-126-5 bingoo]# du -sh es-badger-db/
+18G	es-badger-db/
+[root@fs04-192-168-126-5 bingoo]# tail -1 esdumo.nohup
+total hists 606931329, cost 8h56m4.261514373s
+```

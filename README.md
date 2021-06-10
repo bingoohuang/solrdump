@@ -67,6 +67,21 @@ can be performed.
 3. [frizner/solrdump](https://github.com/frizner/solrdump)
 4. [hectorcorrea/solr-for-newbies](https://github.com/hectorcorrea/solr-for-newbies)
 5. [online json-generator](https://www.json-generator.com)
+6. [SOLR bash recipes for creating, deleting or truncating collections, monitoring and searching](https://gist.github.com/CesarCapillas/a796c0e7cba10ac02213c7f3485d6e90#file-delete-by-id-sh)
+7. [Deleting documents in SOLR](https://www.zylk.net/en/web-2-0/blog/-/blogs/deleting-documents-in-solr)
+    ```sh
+     Via post command:
+     $ post -c gettingstarted -d '<delete><id>44C</id></delete>'
+     
+     Via REST API:
+     
+     $ curl -X POST "http://localhost:8983/solr/gettingstarted/update?commit=true" -H "Content-Type: text/xml" --data-binary "<delete><id>44C</id></delete>"
+     $ curl -X POST "http://localhost:8983/solr/gettingstarted/update?commit=true" -H "Content-Type: application/json" --data-binary '{"delete": {"id":"44C"}}'
+     
+     You may find more scripts in my gist (delete-by-id.sh, delete-by-id2.sh & delete-by-id3.sh)
+
+     Note: Tested in SOLR 6.6 (Cloud)
+    ```
 
 ## Pagination of Results
 
@@ -222,3 +237,64 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
     2021/06/09 13:24:37 fetched 10000/509311 docs
     2021/06/09 13:24:37 process 10000 docs, rate 5784.721384 docs/s, cost 1.728691727s
     ```
+
+
+### routing query in elasticsearch
+
+`http://192.168.126.18:9202/license/_search?routing=619165199309043292&q=holderIdentityNum:619165199309043292`
+
+```json
+{
+   "took": 515,
+   "timed_out": false,
+   "_shards": {
+      "total": 1,
+      "successful": 1,
+      "skipped": 0,
+      "failed": 0
+   },
+   "hits": {
+      "total": 1,
+      "max_score": 17.525234,
+      "hits": [
+         {
+            "_index": "license",
+            "_type": "docs",
+            "_id": "FM8E1nkB5YDd59cjbRPT",
+            "_score": 17.525234,
+            "_routing": "619165199309043292",
+            "_source": {
+               "idCode": "4b00ff75-0c5b-4dfa-80e0-ae013dfc4371",
+               "licenseCode": "4b00ff75-0c5b-4dfa-80e0-ae013dfc4371",
+               "implementCode": "10003230100002888X110000",
+               "name": "特困人员救助供养证",
+               "licenseStatus": "ISSUED",
+               "holderName": [
+                  "王譺灋"
+               ],
+               "holderIdentityType": "10",
+               "holderIdentityNum": [
+                  "619165199309043292"
+               ],
+               "dataType": "INTEGRATION",
+               "bizType": "LICENSE_ISSUE",
+               "bizStatus": "PASSED",
+               "implementOrgCode": "00002888X",
+               "issueOrgName": "七台河市公安局某某分局",
+               "issueOrgCode": "11110228000107924A",
+               "divisionCode": "110118000000",
+               "auditTime": "2020-08-11T08:15:07Z",
+               "issueDate": "2019-06-30T16:00:00Z",
+               "areaCode": "110000",
+               "trustLevel": "A",
+               "id": "4b00ff75-0c5b-4dfa-80e0-ae013dfc4371",
+               "createdBy": "*SYSADM*",
+               "createdDate": "2020-08-11T08:03:58Z",
+               "lastModifiedBy": "*SYSADM*",
+               "lastModifiedDate": "2020-08-11T08:15:07Z"
+            }
+         }
+      ]
+   }
+}
+```

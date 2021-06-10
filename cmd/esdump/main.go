@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/badgerdb"
+	"github.com/bingoohuang/gg/pkg/bytex"
 	"github.com/bingoohuang/gg/pkg/ctx"
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/rest"
@@ -16,7 +17,7 @@ import (
 	"time"
 )
 
-func (Arg) VersionInfo() string { return "0.1.1 2021-06-10 10:42:09" }
+func (Arg) VersionInfo() string { return "0.1.2 2021-06-10 13:48:53" }
 
 func (a Arg) Usage() string {
 	return fmt.Sprintf(`
@@ -150,7 +151,7 @@ type BadgerOutput struct {
 
 func (b *BadgerOutput) Close() error { return b.DB.Close() }
 func (b *BadgerOutput) Output(doc string) error {
-	if err := b.DB.Set(badgerdb.Uint64ToBytes(b.Index), []byte(doc)); err != nil {
+	if err := b.DB.Set(bytex.FromUint64(b.Index), []byte(doc)); err != nil {
 		return err
 	}
 	b.Index++
@@ -158,17 +159,21 @@ func (b *BadgerOutput) Output(doc string) error {
 }
 
 func (b *BadgerOutput) Print(max int) {
+	log.Printf("start to walk")
 	b.DB.Walk(func(k, v []byte) error {
-		fmt.Printf("%d: %s\n", badgerdb.BytesToUint64(k), v)
+		fmt.Printf("%d: %s\n", bytex.ToUint64(k), v)
 		return nil
 	}, badgerdb.WithMax(max))
+	log.Printf("end to walk")
 }
 
 func NewBadgerOutput(path string) (*BadgerOutput, error) {
-	db, err := badgerdb.New(path, false)
+	log.Printf("badgerdb %s openning", path)
+	db, err := badgerdb.Open(badgerdb.WithPath(path))
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("badgerdb %s opened", path)
 
 	return &BadgerOutput{DB: db}, err
 }
