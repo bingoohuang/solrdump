@@ -40,8 +40,13 @@ Usage of esdump (0.1.0 2021-06-09 22:52:44):
 ```sh
 🕙[2021-06-09 23:27:49.288] ❯ esdump -query '{"size":3}' -max 3  -out badger-zz
 2021/06/09 23:27:53 total hists 3, cost 7.869417ms
-🕙[2021-06-10 00:24:54.689] ❯ esdump -out badger-zz -print-badger                                                        
+🕙[2021-06-10 00:24:54.689] ❯ esdump -out badger-zz -view-badger 10                                                        
 0: {"idCode":"700a28db-8f26-4133-95a1-fdda48afb6dc","holderName":"阮蛉佦","holderNum":"426769199201221245","areaCode":"885845","createdDate":"2052-02-18T23:39:26Z"}
 1: {"idCode":"70c8aabb-6ae6-46eb-b37a-91d02998163c","holderName":"皇甫癕器","holderNum":"443488201811286840","areaCode":"417569","createdDate":"1999-02-25T14:10:17Z"}
 2: {"idCode":"a85c3edc-367c-4140-b6ab-2a398989e7f6","holderName":"童控櫭","holderNum":"214013201803237761","areaCode":"025853","createdDate":"2043-06-30T03:17:57Z"}
+```
+
+```sh
+$ esdump -es 192.168.126.5:9202 -index license -type docs -query '{"size":10,"_source":["holderIdentityNum"]}' -filter 'hits.hits.#._source.holderIdentityNum.0' -max 10 -out bb-license         
+2021/06/10 10:43:10 total hists 10, cost 725.982604ms
 ```

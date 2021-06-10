@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func (Arg) VersionInfo() string { return "0.1.0 2021-06-09 22:52:44" }
+func (Arg) VersionInfo() string { return "0.1.1 2021-06-10 10:42:09" }
 
 func (a Arg) Usage() string {
 	return fmt.Sprintf(`
@@ -81,7 +81,9 @@ func main() {
 		})
 
 		totalHits += hits
-		log.Printf("total hists %d, cost %s", totalHits, cost)
+		if hits > 0 {
+			log.Printf("total hists %d, cost %s", totalHits, cost)
+		}
 
 		if hits <= 0 || (a.Max > 0 && totalHits >= a.Max) || c.Err() != nil {
 			break
