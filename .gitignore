@@ -9,3 +9,4 @@ solrdump*.rpm
 /httplive.db
 .DS_Store
 /badger-zz/
+/bb-license
