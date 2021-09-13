@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/v"
 	"io"
 	"net/url"
 	"os"
 	"sync"
+
+	"github.com/bingoohuang/gg/pkg/v"
 )
 
 func (Arg) VersionInfo() string { return v.Version() }

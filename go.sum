@@ -38,8 +38,9 @@ github.com/bingoohuang/gg v0.0.0-20210608031951-72884199b0ac/go.mod h1:kKNUAtRrA
 github.com/bingoohuang/gg v0.0.0-20210913025844-e6f0ecb68279 h1:fME+TG6L4N+3/Eo8pzp+HsH0AE1HRDTA7DSBJTb5xdE=
 github.com/bingoohuang/gg v0.0.0-20210913025844-e6f0ecb68279/go.mod h1:W0ezeB+vJiAXRBAphRepBzXzd5thbi9R+b54jbA1DZc=
 github.com/bingoohuang/ginx v0.0.0-20200729033750-047869f5e81c/go.mod h1:fv5fKhsGUfPInVsslF5FJv2oNlZn153C5OogaaUFvFc=
-github.com/bingoohuang/golog v0.0.0-20210727011701-2319aa8459ec h1:qO1GjhDg+5AgmFSEmxHimeVnJH8XWy+I2Jc7ma/tsAY=
 github.com/bingoohuang/golog v0.0.0-20210727011701-2319aa8459ec/go.mod h1:fzPzW4tq/ey2qIiYlqhoSPJRYQ5gmmLha5dcDoUgfVI=
+github.com/bingoohuang/golog v0.0.0-20210913032958-ec28236592e5 h1:52dk8adpmBj9Yk/pwt8mg8KcjKF6dImO9Bei7GxIwug=
+github.com/bingoohuang/golog v0.0.0-20210913032958-ec28236592e5/go.mod h1:fzPzW4tq/ey2qIiYlqhoSPJRYQ5gmmLha5dcDoUgfVI=
 github.com/bingoohuang/jj v0.0.0-20210617023017-2d704b7dc62c h1:eGuPUJdFbkHQHnYSqe0g8liFG8Qt8VKSms0G2uvsxYQ=
 github.com/bingoohuang/jj v0.0.0-20210617023017-2d704b7dc62c/go.mod h1:bV9nOhOo9pY9zfWfXnzmkTRYHNKU2bIoz5asX5Xldyw=
 github.com/bingoohuang/sariaf v0.0.0-20201222043148-21fd9703b115/go.mod h1:DSi1LVR76Ap189KzzA40C8pFSpRZHsy/n+kgK8ihfhs=

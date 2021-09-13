@@ -32,7 +32,7 @@ func main() {
 	flagparse.Parse(a,
 		flagparse.AutoLoadYaml("c", "solrdump.yml"),
 		flagparse.ProcessInit(&initAssets))
-	golog.SetupLogrus()
+	defer golog.SetupLogrus().OnExit()
 	log.Printf("started with config: %+v created", a)
 	start := time.Now()
 
