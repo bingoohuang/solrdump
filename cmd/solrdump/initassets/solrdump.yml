@@ -22,9 +22,10 @@ Cursor: true
 # 删除字段名称
 RemoveFields:
   - "_version_"
-# 输出文件，或者网址，或者noop
+# 输出文件，或者 elastic search 网址，或者noop
+# 注： :9202/license/_bulk 为 bulk api 写入, :9202/license/docs 为单条普通写入，性能很差
 Output:
   - "noop"
-  #- "192.168.2.8:9202/license/docs?routing=@holderIdentityNum.0"
+  #- "192.168.2.8:9202/license/_bulk?routing=@holderIdentityNum.0"
 # 反显模式
 Verbose: 2
