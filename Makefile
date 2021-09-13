@@ -1,25 +1,22 @@
 SHELL = /bin/bash
-TARGETS = solrdump
-PKGNAME = solrdump
 
-all: $(TARGETS)
+all: install
 
 app := solrdump
 
-goVersion := $(shell go version)
-# echo ${goVersion#go version }
-# strip prefix "go version " from output "go version go1.16.7 darwin/amd64"
-goVersion2 := $(subst go version ,,$(goVersion))
-buildTime := $(shell date '+%Y-%m-%d %H:%M:%S')
+goVersion := $(shell go version | sed 's/go version //'|sed 's/ /_/')
+buildTime := $(shell if hash gdate 2>/dev/null; then gdate --rfc-3339=seconds | sed 's/ /T/'; else date --rfc-3339=seconds | sed 's/ /T/'; fi)
 # https://git-scm.com/docs/git-rev-list#Documentation/git-rev-list.txt-emaIem
 gitCommit := $(shell git rev-list --oneline --format=format:'%h@%aI' --max-count=1 `git rev-parse HEAD` | tail -1)
 #gitCommit := $(shell git rev-list -1 HEAD)
 # https://stackoverflow.com/a/47510909
 pkg := github.com/bingoohuang/gg/pkg/v
 appVersion := 0.1.8
-#static := -static
+extldflags := -extldflags -static
 # https://ms2008.github.io/2018/10/08/golang-build-version/
-flags = "-extldflags $(static) -w -X '$(pkg).buildTime=$(buildTime)' -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X '$(pkg).goVersion=$(goVersion2)'"
+# https://github.com/kubermatic/kubeone/blob/master/Makefile
+flags1 = "$(extldflags) -s -w -X '$(pkg).buildTime=$(buildTime)' -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X $(pkg).goVersion=$(goVersion)"
+flags2 = "-s -w -X '$(pkg).buildTime=$(buildTime)' -X $(pkg).appVersion=$(appVersion) -X $(pkg).gitCommit=$(gitCommit) -X $(pkg).goVersion=$(goVersion)"
 
 init:
 	export GOPROXY=https://goproxy.cn
@@ -40,14 +37,14 @@ fmt:
 	gci -w -local github.com/daixiang0/gci
 
 install: init
-	go install -trimpath -ldflags=${flags}  ./...
+	go install -trimpath -ldflags=${flags2}  ./...
 	upx ~/go/bin/${app}
 
-linux-amd64: init
-	GOOS=linux GOARCH=amd64 go install -trimpath -ldflags=${flags}  ./...
+linux: init
+	GOOS=linux GOARCH=amd64 go install -trimpath -ldflags=${flags1}  ./...
 	upx ~/go/bin/linux_amd64/${app}
 linux-arm64: init
-	GOOS=linux GOARCH=arm64 go install -trimpath -ldflags=${flags}  ./...
+	GOOS=linux GOARCH=arm64 go install -trimpath -ldflags=${flags1}  ./...
 	upx ~/go/bin/linux_arm64/${app}
 
 $(TARGETS): %: main.go
