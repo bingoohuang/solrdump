@@ -29,3 +29,5 @@ Output:
   #- "192.168.2.8:9202/license/_bulk?routing=@holderIdentityNum.0"
 # 反显模式
 Verbose: 2
+# bulk 模式中，routing key 的名称，7.14需要 routing, 老版本可能是 _routing
+Routing: routing

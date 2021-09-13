@@ -26,6 +26,7 @@ Usage of %s:
   -output        Output file, or http url, or noop
   -cursor        Enable cursor or not
   -v             Verbose, -vv -vvv
+  -routing       Routing keyword, default routing, maybe _routing
 `, os.Args[0])
 }
 
@@ -34,6 +35,7 @@ type Arg struct {
 	Init    bool
 	Version bool
 
+	Routing      string `val:"routing"`
 	Server       string `required:"true"`
 	Q            string `val:"*:*"`
 	Max          int    `val:"10"`

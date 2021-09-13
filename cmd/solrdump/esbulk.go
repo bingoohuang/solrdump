@@ -43,7 +43,7 @@ func (a *Arg) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGrou
 	uri = u.String()
 
 	for {
-		b, ok := numOrTicker(docCh, routingExpr, a.Bulk)
+		b, ok := a.numOrTicker(docCh, routingExpr, a.Bulk)
 		if b.Len() > 0 {
 			outputHttp(uri, b.Bytes(), a.Verbose, a.printer)
 		}
@@ -53,7 +53,7 @@ func (a *Arg) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGrou
 	}
 }
 
-func numOrTicker(docCh chan []byte, routingExpr vars.Subs, batchNum int) (*bytes.Buffer, bool) {
+func (a *Arg) numOrTicker(docCh chan []byte, routingExpr vars.Subs, batchNum int) (*bytes.Buffer, bool) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
@@ -68,7 +68,7 @@ func numOrTicker(docCh chan []byte, routingExpr vars.Subs, batchNum int) (*bytes
 			}
 			if len(routingExpr) > 0 {
 				routing := routingExpr.Eval(&JsonValue{Doc: doc}).(string)
-				b.Write([]byte(`{"index":{"_type":"docs","_routing":"` + routing + `"}}`))
+				b.Write([]byte(`{"index":{"_type":"docs","` + a.Routing + `":"` + routing + `"}}`))
 			} else {
 				b.Write([]byte(`{"index":{"_type":"docs"}}`))
 			}
