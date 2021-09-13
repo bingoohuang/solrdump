@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+
+	"github.com/bingoohuang/golog"
 
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/jihe"
@@ -20,12 +23,17 @@ import (
 	"github.com/bingoohuang/jj"
 )
 
+//go:embed initassets
+var initAssets embed.FS
+
 func main() {
 	c, cancelFunc := sigx.RegisterSignals(context.Background())
 	a := &Arg{Context: c, outputWg: &sync.WaitGroup{}}
-	flagparse.Parse(a)
-
-	log.Printf("started")
+	flagparse.Parse(a,
+		flagparse.AutoLoadYaml("c", "solrdump.yml"),
+		flagparse.ProcessInit(&initAssets))
+	golog.SetupLogrus()
+	log.Printf("started with config: %+v created", a)
 	start := time.Now()
 
 	a.StartOutput()

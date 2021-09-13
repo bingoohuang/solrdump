@@ -27,7 +27,7 @@ const (
 	contentTypeFormURLEncoded = "application/x-www-form-urlencoded"
 )
 
-//ErrUnexpectedMethod occurs when an http.Client method is unable to be mapped from a calling method in the pester client
+// ErrUnexpectedMethod occurs when an http.Client method is unable to be mapped from a calling method in the pester client
 var ErrUnexpectedMethod = errors.New("unexpected client method, must be one of Do, Get, Head, Post, or PostFrom")
 
 // ErrReadingBody happens when we cannot read the body bytes
@@ -320,7 +320,7 @@ func (c *Client) pester(ctx context.Context, p params) (*http.Response, error) {
 					return
 				}
 
-				//If the request has been cancelled, skip retries
+				// If the request has been cancelled, skip retries
 				select {
 				case <-req.Context().Done():
 					multiplexCh <- result{resp: resp, err: req.Context().Err()}
@@ -439,14 +439,18 @@ func (c *Client) HeadContext(ctx context.Context, url string) (*http.Response, e
 
 // PostContext provides the same functionality as http.Client.Post
 func (c *Client) PostContext(ctx context.Context, url string, bodyType string, body io.Reader) (*http.Response, error) {
-	return c.pester(ctx, params{method: methodPost, url: url, bodyType: bodyType,
-		body: ioutil.NopCloser(body), verb: http.MethodPost})
+	return c.pester(ctx, params{
+		method: methodPost, url: url, bodyType: bodyType,
+		body: ioutil.NopCloser(body), verb: http.MethodPost,
+	})
 }
 
 // PostFormContext provides the same functionality as http.Client.PostForm
 func (c *Client) PostFormContext(ctx context.Context, url string, data url.Values) (*http.Response, error) {
-	return c.pester(ctx, params{method: methodPostForm, url: url, bodyType: contentTypeFormURLEncoded,
-		body: ioutil.NopCloser(strings.NewReader(data.Encode())), verb: http.MethodPost})
+	return c.pester(ctx, params{
+		method: methodPostForm, url: url, bodyType: contentTypeFormURLEncoded,
+		body: ioutil.NopCloser(strings.NewReader(data.Encode())), verb: http.MethodPost,
+	})
 }
 
 // Do provides the same functionality as http.Client.Do

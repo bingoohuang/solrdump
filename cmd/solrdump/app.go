@@ -3,17 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/v"
 	"io"
 	"net/url"
 	"os"
 	"sync"
 )
 
-func (Arg) VersionInfo() string { return "0.1.7 2021-06-09 13:51:38" }
+func (Arg) VersionInfo() string { return v.Version() }
 
 func (a Arg) Usage() string {
 	return fmt.Sprintf(`
-Usage of %s (%s):
+Usage of %s:
   -max int       Max number of rows (default 10)
   -q string      SOLR query (default "*:*")
   -rows int      Number of rows returned per request (default 10000)
@@ -24,17 +25,20 @@ Usage of %s (%s):
   -output        Output file, or http url, or noop
   -cursor        Enable cursor or not
   -v             Verbose, -vv -vvv
-`, os.Args[0], a.VersionInfo())
+`, os.Args[0])
 }
 
 type Arg struct {
+	Config  string `flag:"c" usage:"yml config filepath"`
+	Init    bool
+	Version bool
+
 	Server       string `required:"true"`
 	Q            string `val:"*:*"`
 	Max          int    `val:"10"`
 	Rows         int    `val:"10000"`
 	Bulk         int    `val:"100"`
-	Version      bool
-	Cursor       bool `val:"true"`
+	Cursor       bool   `val:"true"`
 	RemoveFields []string
 	Output       []string
 	Verbose      int `flag:"v" count:"true"`

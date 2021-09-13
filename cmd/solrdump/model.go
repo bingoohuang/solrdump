@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/bingoohuang/jj"
 	"io"
 	"log"
+
+	"github.com/bingoohuang/jj"
 )
 
 type JsonValue struct {

@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/url"
+
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/gobars/solrdump/pester"
-	"io/ioutil"
-	"net/url"
 )
 
 func (a Arg) createSolrLink() string {
@@ -66,6 +67,7 @@ func (a Arg) GetCursor() string {
 
 	return "na"
 }
+
 func (a *Arg) SetCursor(mark string) {
 	if a.Cursor {
 		a.query.Set(cursorMark, mark)
@@ -77,7 +79,7 @@ func (a Arg) ReachedMax() bool { return a.Max > 0 && a.total >= a.Max }
 
 // SolrResponse is a SOLR response.
 type SolrResponse struct {
-	//Header   Header `json:"header"`
+	// Header   Header `json:"header"`
 	Response       Response `json:"response"`
 	NextCursorMark string   `json:"nextCursorMark"`
 }

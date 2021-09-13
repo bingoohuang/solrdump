@@ -155,7 +155,6 @@ func main() {
 
 		log.Printf("Do() POST :%d %s\n\n", port, resp.Status)
 	}
-
 }
 
 // randoHandler will cause random delays and give random status responses

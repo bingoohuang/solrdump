@@ -1,0 +1,30 @@
+# MaxPoolSize value 进程池大小(默认 %d)
+MaxPoolSize: 0
+# Listen value 只取前N个检查(默认 :9337)
+Listen: ":9337"
+# WkVersion value Wk包装版本号, 0/1/1p/2/2p（默认 2)
+WkVersion: 2
+# EnableCacheDir 是否开启Wk的缓存目录（默认 false)
+EnableCacheDir: false
+
+# 最大查询行数
+Max: 10
+# SOLR 查询表达式
+Q: "*:*"
+# 每次查询行数
+Rows: 10000
+# ES 批量模式一批写入多少行
+Bulk: 100
+# SOLR 服务地址（带索引名字)
+Server: localhost:8983/solr/example
+# SOLR 查询使用游标模式
+Cursor: true
+# 删除字段名称
+RemoveFields:
+  - "_version_"
+# 输出文件，或者网址，或者noop
+Output:
+  - "noop"
+  #- "192.168.2.8:9202/license/docs?routing=@holderIdentityNum.0"
+# 反显模式
+Verbose: 2

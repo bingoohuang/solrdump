@@ -355,7 +355,6 @@ func TestDefaultBackoff(t *testing.T) {
 			t.Errorf("got time %d, want %d (%d greater than start time %d)", got, want, i, startTime)
 		}
 	}
-
 }
 
 func TestFormatError(t *testing.T) {
@@ -388,7 +387,7 @@ func TestCustomLogHook(t *testing.T) {
 	errorLines := []ErrEntry{}
 
 	c := New()
-	//c.KeepLog = true
+	// c.KeepLog = true
 	c.MaxRetries = expectedRetries
 	c.Backoff = func(_ int) time.Duration {
 		return 10 * time.Microsecond
@@ -460,7 +459,7 @@ func TestDefaultLogHook(t *testing.T) {
 	errorLines := 0
 
 	c := New()
-	//c.KeepLog = true
+	// c.KeepLog = true
 	c.MaxRetries = 5
 	c.Backoff = func(_ int) time.Duration {
 		return 10 * time.Microsecond
@@ -723,7 +722,7 @@ func TestRetriesNotAttemptedIfContextIsCancelled(t *testing.T) {
 	c.KeepLog = true
 	c.Backoff = ExponentialBackoff
 
-	//Cancel the context in another routine (eg: user interrupt)
+	// Cancel the context in another routine (eg: user interrupt)
 	go func() {
 		cancel()
 		t.Logf("\n%d - cancelled", time.Now().Unix())
@@ -824,7 +823,6 @@ func timeoutServer(timeout time.Duration) (int, error) {
 func serverWith429() (int, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("429 Too many requests"))
 	})
@@ -854,7 +852,6 @@ func serverWith429() (int, error) {
 func serverWith400() (int, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("400 Bad Request"))
 	})

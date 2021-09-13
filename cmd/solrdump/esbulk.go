@@ -2,11 +2,12 @@ package main
 
 import (
 	"bytes"
-	"github.com/bingoohuang/gg/pkg/vars"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/vars"
 )
 
 func (a *Arg) createBulkOutput(uri string) func(doc []byte) {

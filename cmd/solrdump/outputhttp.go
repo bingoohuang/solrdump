@@ -3,11 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/vars"
 	"github.com/gobars/solrdump/pester"
-	"log"
-	"time"
 )
 
 func outputHttp(uri0 string, doc []byte, verbose int, printer Printer) {

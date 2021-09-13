@@ -3,6 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/bingoohuang/gg/pkg/badgerdb"
 	"github.com/bingoohuang/gg/pkg/bytex"
 	"github.com/bingoohuang/gg/pkg/flagparse"
@@ -10,11 +16,6 @@ import (
 	"github.com/bingoohuang/gg/pkg/sigx"
 	"github.com/bingoohuang/jj"
 	"github.com/gobars/solrdump/pester"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
 func (Arg) VersionInfo() string { return "0.1.2 2021-06-10 13:48:53" }
@@ -59,7 +60,7 @@ func main() {
 	out := a.createOut()
 	defer out.Close()
 
-	//uri := `http://192.168.126.5:9202/license/docs/_search?scroll=1m`
+	// uri := `http://192.168.126.5:9202/license/docs/_search?scroll=1m`
 	uri, _ := rest.NewURL(a.Es).Paths(a.Index, a.Type, `/_search`).Query("scroll", a.Scroll).Build()
 
 	r, tim := Post(uri, []byte(a.Query))
