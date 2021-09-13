@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/bingoohuang/gg/pkg/badgerdb"
 	"github.com/bingoohuang/gg/pkg/bytex"
-	"github.com/bingoohuang/gg/pkg/ctx"
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/rest"
+	"github.com/bingoohuang/gg/pkg/sigx"
 	"github.com/bingoohuang/jj"
 	"github.com/gobars/solrdump/pester"
 	"io"
@@ -53,7 +53,7 @@ func main() {
 	a := &Arg{}
 	flagparse.Parse(a)
 
-	c, ctxCancel := ctx.RegisterSignals(nil)
+	c, ctxCancel := sigx.RegisterSignals(nil)
 	defer ctxCancel()
 
 	out := a.createOut()
@@ -161,7 +161,7 @@ func (b *BadgerOutput) Output(doc string) error {
 
 func (b *BadgerOutput) Print(max int) {
 	log.Printf("start to walk")
-	b.DB.Walk(func(k, v []byte) error {
+	_ = b.DB.Walk(func(k, v []byte) error {
 		fmt.Printf("%d: %s\n", bytex.ToUint64(k), v)
 		return nil
 	}, badgerdb.WithMax(max))

@@ -10,18 +10,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bingoohuang/gg/pkg/ctx"
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/jihe"
 	"github.com/bingoohuang/gg/pkg/osx"
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/rotate"
+	"github.com/bingoohuang/gg/pkg/sigx"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/jj"
 )
 
 func main() {
-	c, cancelFunc := ctx.RegisterSignals(context.Background())
+	c, cancelFunc := sigx.RegisterSignals(context.Background())
 	a := &Arg{Context: c, outputWg: &sync.WaitGroup{}}
 	flagparse.Parse(a)
 
@@ -133,7 +133,8 @@ func (a *Arg) createOutputFn() func(doc []byte) {
 
 			fns = append(fns, fn)
 		} else {
-			w := rotate.NewQueueWriter(a.Context, osx.ExpandHome(out), 1000, false)
+			w := rotate.NewQueueWriter(osx.ExpandHome(out), rotate.WithContext(a.Context),
+				rotate.WithOutChanSize(1000), rotate.WithAllowDiscard(false))
 			a.closers = append(a.closers, w)
 
 			fns = append(fns, func(doc []byte) { w.Send(string(doc)+"\n", true) })
