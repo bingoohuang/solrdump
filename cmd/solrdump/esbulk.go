@@ -41,31 +41,35 @@ func (a *Arg) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGrou
 	}
 	u.RawQuery = query.Encode()
 	uri = u.String()
-
+	b := &bytes.Buffer{}
 	for {
-		b, ok := a.numOrTicker(docCh, routingExpr, a.Bulk)
-		if b.Len() > 0 {
-			outputHttp(uri, b.Bytes(), a.Verbose, a.printer)
-		}
+		ok := a.numOrTicker(b, docCh, routingExpr)
+		outputHttp(uri, b.Bytes(), a.Verbose, a.printer)
 		if !ok {
 			return
 		}
 	}
 }
 
-func (a *Arg) numOrTicker(docCh chan []byte, routingExpr vars.Subs, batchNum int) (*bytes.Buffer, bool) {
+func (a *Arg) numOrTicker(b *bytes.Buffer, docCh chan []byte, routingExpr vars.Subs) (continued bool) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	num := 0
-	b := &bytes.Buffer{}
+	b.Reset()
 
 	for {
 		select {
+		case <-ticker.C:
+			if num > 0 {
+				return true
+			}
+
 		case doc, ok := <-docCh:
 			if !ok {
-				return b, false
+				return false
 			}
+
 			if len(routingExpr) > 0 {
 				routing := routingExpr.Eval(&JsonValue{Doc: doc}).(string)
 				b.Write([]byte(`{"index":{"_type":"docs","` + a.Routing + `":"` + routing + `"}}`))
@@ -76,11 +80,9 @@ func (a *Arg) numOrTicker(docCh chan []byte, routingExpr vars.Subs, batchNum int
 			b.Write([]byte("\n"))
 			b.Write(doc)
 			b.Write([]byte("\n"))
-			if num++; num >= batchNum {
-				return b, true
+			if num++; num >= a.Bulk {
+				return true
 			}
-		case <-ticker.C:
-			return b, true
 		}
 	}
 }

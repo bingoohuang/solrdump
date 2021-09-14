@@ -111,7 +111,9 @@ func (a *Arg) PostProcess() {
 
 	if a.Verbose <= 2 {
 		interval := time.Duration(ss.Ifi(a.Verbose >= 1, 5, 10)) * time.Second
-		printer := jihe.NewDelayChan(a.Context, func(i interface{}) { log.Printf(i.(string)) }, interval)
+		printer := jihe.NewDelayChan(a.Context, func(i interface{}) {
+			log.Printf(i.(string))
+		}, interval)
 		a.closers = append(a.closers, printer)
 		a.printer = printer
 	} else {

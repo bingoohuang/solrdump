@@ -26,7 +26,7 @@ Usage of %s:
   -output        Output file, or http url, or noop
   -cursor        Enable cursor or not
   -v             Verbose, -vv -vvv
-  -routing       Routing keyword, default routing, maybe _routing
+  -routing       Routing keyword, default "routing", maybe "_routing"
 `, os.Args[0])
 }
 
