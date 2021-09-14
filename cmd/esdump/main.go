@@ -9,8 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/bingoohuang/gg/pkg/badgerdb"
-	"github.com/bingoohuang/gg/pkg/bytex"
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/sigx"
@@ -38,16 +36,15 @@ Usage of %s (%s):
 }
 
 type Arg struct {
-	Es         string `val:"127.0.0.1:9200"`
-	Index      string `val:"zz"`
-	Type       string `val:"_doc"`
-	Scroll     string `val:"1m"`
-	Max        int    `val:"10000"`
-	Query      string
-	Filter     string `val:"hits.hits.#._source"`
-	Out        string
-	Version    bool
-	ViewBadger int
+	Es      string `val:"127.0.0.1:9200"`
+	Index   string `val:"zz"`
+	Type    string `val:"_doc"`
+	Scroll  string `val:"1m"`
+	Max     int    `val:"10000"`
+	Query   string
+	Filter  string `val:"hits.hits.#._source"`
+	Out     string
+	Version bool
 }
 
 func main() {
@@ -114,20 +111,8 @@ func Post(url string, payload []byte) (*http.Response, time.Duration) {
 }
 
 func (a *Arg) createOut() Out {
-	if a.Out == "" || a.Out == "stdout" {
-		return &Stdout{}
-	}
-
-	bdb, err := NewBadgerOutput(a.Out)
-	if err != nil {
-		log.Panicf("failed to createOut badger out: %v", err)
-	}
-
-	if a.ViewBadger > 0 {
-		bdb.Print(a.ViewBadger)
-		os.Exit(0)
-	}
-	return bdb
+	//if a.Out == "" || a.Out == "stdout" {
+	return &Stdout{}
 }
 
 type Out interface {
@@ -144,38 +129,4 @@ func (s *Stdout) Output(doc string) error {
 	s.Index++
 	log.Printf("%010d:%s", s.Index, doc)
 	return nil
-}
-
-type BadgerOutput struct {
-	Index uint64
-	DB    *badgerdb.Badger
-}
-
-func (b *BadgerOutput) Close() error { return b.DB.Close() }
-func (b *BadgerOutput) Output(doc string) error {
-	if err := b.DB.Set(bytex.FromUint64(b.Index), []byte(doc)); err != nil {
-		return err
-	}
-	b.Index++
-	return nil
-}
-
-func (b *BadgerOutput) Print(max int) {
-	log.Printf("start to walk")
-	_ = b.DB.Walk(func(k, v []byte) error {
-		fmt.Printf("%d: %s\n", bytex.ToUint64(k), v)
-		return nil
-	}, badgerdb.WithMax(max))
-	log.Printf("end to walk")
-}
-
-func NewBadgerOutput(path string) (*BadgerOutput, error) {
-	log.Printf("badgerdb %s openning", path)
-	db, err := badgerdb.Open(badgerdb.WithPath(path))
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("badgerdb %s opened", path)
-
-	return &BadgerOutput{DB: db}, err
 }
