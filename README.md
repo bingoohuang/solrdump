@@ -166,7 +166,22 @@ Content-Type: text/plain;charset=UTF-8
 Date: Thu, 16 Sep 2021 02:28:54 GMT
 
 {"responseHeader":{"status":0,"QTime":16,"params":{"q":"*:*","fl":"id","cursorMark":"AoE/BTAwMDEzZGQ5LTczMjYtNDNkNy05NzdkLTYwY2RhYjhkZWI5NQ==","sort":"id asc","rows":"10","wt":"json"}},"response":{"numFound":509327,"start":0,"docs":[{"id":"000152b0-e396-4fe8-96ec-20e851a11bb2"},{"id":"000176ab-2095-49eb-9346-77dae9937dab"},{"id":"00017f51-5618-4ce5-a2a2-9052c2d667cc"},{"id":"0001d75d-11ca-47a4-8b3a-5ec9f4860b74"},{"id":"00021e28-717e-41c3-a528-b54ea22877d8"},{"id":"000256ef-54c6-4f59-ba3e-840b039b3a47"},{"id":"0002a922-bc90-44b0-94ba-2dddaec402c5"},{"id":"0002d485-301f-406c-9d4f-79f85762d9b9"},{"id":"0002ed4f-3275-4e05-8a45-1f43bae361af"},{"id":"0002fe77-f4c8-4b1d-ac96-d9d89e3e5c32"}]},"nextCursorMark":"AoE/BTAwMDJmZTc3LWY0YzgtNGIxZC1hYzk2LWQ5ZDg5ZTNlNWMzMg=="}
+$ gurl 192.168.126.16:8983/solr/licenseIndex/select q=='id:(000152b0-e396-4fe8-96ec-20e851a11bb2 000176ab-2095-49eb-9346-77dae9937dab 00017f51-5618-4ce5-a2a2-9052c2d667cc)' wt==json fl==id -raw
+GET /solr/licenseIndex/select?fl=id&q=id%3A%28000152b0-e396-4fe8-96ec-20e851a11bb2+000176ab-2095-49eb-9346-77dae9937dab+00017f51-5618-4ce5-a2a2-9052c2d667cc%29&wt=json HTTP/1.1
+Host: 192.168.126.16:8983
+Accept: application/json
+Accept-Encoding: gzip, deflate
+Content-Type: application/json
+User-Agent: gurl/0.1.0
+
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Content-Type: text/plain;charset=UTF-8
+Date: Thu, 16 Sep 2021 08:43:15 GMT
+
+{"responseHeader":{"status":0,"QTime":0,"params":{"q":"id:(000152b0-e396-4fe8-96ec-20e851a11bb2 000176ab-2095-49eb-9346-77dae9937dab 00017f51-5618-4ce5-a2a2-9052c2d667cc)","fl":"id","wt":"json"}},"response":{"numFound":3,"start":0,"docs":[{"id":"000176ab-2095-49eb-9346-77dae9937dab"},{"id":"00017f51-5618-4ce5-a2a2-9052c2d667cc"},{"id":"000152b0-e396-4fe8-96ec-20e851a11bb2"}]}}
 ```
+
 ## Docker
 
 ### Solr Docker
