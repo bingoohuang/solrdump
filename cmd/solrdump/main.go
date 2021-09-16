@@ -38,6 +38,16 @@ func main() {
 
 	a.StartOutput()
 
+	wal, err := jj.WalOpen(".cursorMarks", &jj.WalOptions{LogFormat: jj.JSONFormat})
+	if err != nil {
+		log.Fatalf("failed to open cursor wal: %v", err)
+	}
+	defer wal.Close()
+
+	if err := a.readLastCursor(wal); err != nil {
+		log.Fatalf("failed to read last cursor: %v", err)
+	}
+
 	for !a.ReachedMax() {
 		link := a.createSolrLink()
 		if a.Verbose >= 2 {
@@ -49,6 +59,8 @@ func main() {
 		if err != nil {
 			log.Fatalf("error: %v", err)
 		}
+
+		logCursor(wal, cursor)
 		if cursor == a.GetCursor() || a.Context.Err() != nil {
 			break
 		}
@@ -66,6 +78,41 @@ func main() {
 	cancelFunc()
 	cost := time.Since(start)
 	log.Printf("process %d docs, rate %f docs/s, cost %s", a.total, float64(a.total)/cost.Seconds(), cost)
+}
+
+func (a *Arg) readLastCursor(wal *jj.WalLog) (err error) {
+	if a.Force { // Force a new query from cursorMark = "*"
+		return nil
+	}
+
+	lastIndex, err := wal.LastIndex()
+	if err != nil {
+		return err
+	}
+	if lastIndex <= 0 {
+		return nil
+	}
+
+	if data, err := wal.Read(lastIndex); err != nil {
+		return err
+	} else {
+		a.SetCursor(string(data))
+	}
+	return nil
+}
+
+func logCursor(wal *jj.WalLog, cursor string) {
+	lastIndex, err := wal.LastIndex()
+	if err != nil {
+		log.Fatalf("get cursor wal last index, error: %v", err)
+	}
+	if err := wal.Write(lastIndex+1, []byte(cursor)); err != nil {
+		log.Fatalf("write cursor wal, error: %v", err)
+	}
+
+	if lastIndex > 10 {
+		wal.TruncateFront(lastIndex - 10)
+	}
 }
 
 func (a *Arg) StartOutput() {
@@ -135,20 +182,18 @@ func (a *Arg) createOutputFn() func(doc []byte) {
 
 	var fns []func(doc []byte)
 	for _, out := range a.Output {
+		var fn func(doc []byte)
 		if uri, ok := rest.MaybeURL(out); ok {
-			fn := a.createBulkOutput(uri)
-			if fn == nil {
+			if fn = a.createBulkOutput(uri); fn == nil {
 				fn = func(doc []byte) { outputHttp(uri, doc, a.Verbose, a.printer) }
 			}
-
-			fns = append(fns, fn)
 		} else {
 			w := rotate.NewQueueWriter(osx.ExpandHome(out), rotate.WithContext(a.Context),
 				rotate.WithOutChanSize(1000), rotate.WithAllowDiscard(false))
 			a.closers = append(a.closers, w)
-
-			fns = append(fns, func(doc []byte) { w.Send(string(doc)+"\n", true) })
+			fn = func(doc []byte) { w.Send(string(doc)+"\n", true) }
 		}
+		fns = append(fns, fn)
 	}
 
 	return func(doc []byte) {

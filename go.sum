@@ -18,6 +18,7 @@ github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuy
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/antonmedv/expr v1.8.9/go.mod h1:5qsM3oLGDND7sDmQGDXHkYfkjYMUX14qsgqmHhwGEk8=
+github.com/antonmedv/expr v1.9.0/go.mod h1:5qsM3oLGDND7sDmQGDXHkYfkjYMUX14qsgqmHhwGEk8=
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/apache/thrift v0.13.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
@@ -39,8 +40,8 @@ github.com/bingoohuang/ginx v0.0.0-20200729033750-047869f5e81c/go.mod h1:fv5fKhs
 github.com/bingoohuang/golog v0.0.0-20210727011701-2319aa8459ec/go.mod h1:fzPzW4tq/ey2qIiYlqhoSPJRYQ5gmmLha5dcDoUgfVI=
 github.com/bingoohuang/golog v0.0.0-20210913032958-ec28236592e5 h1:52dk8adpmBj9Yk/pwt8mg8KcjKF6dImO9Bei7GxIwug=
 github.com/bingoohuang/golog v0.0.0-20210913032958-ec28236592e5/go.mod h1:fzPzW4tq/ey2qIiYlqhoSPJRYQ5gmmLha5dcDoUgfVI=
-github.com/bingoohuang/jj v0.0.0-20210914014829-34b1a87fcc87 h1:d0hhlK9hl4NSkBtuCyVJUeVh3n6BTEMRccsdKF7wKBU=
-github.com/bingoohuang/jj v0.0.0-20210914014829-34b1a87fcc87/go.mod h1:bV9nOhOo9pY9zfWfXnzmkTRYHNKU2bIoz5asX5Xldyw=
+github.com/bingoohuang/jj v0.0.0-20210916030106-e7998a53cd0a h1:pLbqkWuyFM9J1DZZ6Nx7BT6aFX9GvOrFXhIDyqkKtww=
+github.com/bingoohuang/jj v0.0.0-20210916030106-e7998a53cd0a/go.mod h1:FRRBNLmAzReFt/pEbIR0gx8yEpQkSrHEz+IUchujJUE=
 github.com/bingoohuang/sariaf v0.0.0-20201222043148-21fd9703b115/go.mod h1:DSi1LVR76Ap189KzzA40C8pFSpRZHsy/n+kgK8ihfhs=
 github.com/boltdb/bolt v1.3.1/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx27Ps=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=

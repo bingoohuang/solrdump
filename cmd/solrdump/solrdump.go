@@ -17,11 +17,12 @@ func (a Arg) createSolrLink() string {
 
 func (a *Arg) prepareSolrQuery() {
 	a.query = url.Values{}
+	// https://solr.apache.org/guide/6_6/common-query-parameters.html
 	a.query.Set("q", a.Q)
 	a.query.Set("sort", "id asc")
 	a.query.Set("rows", fmt.Sprintf("%d", a.Rows))
-	a.query.Set("fl", "")
-	a.query.Set("wt", "json")
+	a.query.Set("fl", a.Fl)   // Field List
+	a.query.Set("wt", "json") // Specifies the Response Writer to be used to format the query response.
 	a.SetCursor("*")
 }
 

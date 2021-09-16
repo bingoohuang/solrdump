@@ -136,6 +136,37 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
 }
 ```
 
+```sh
+$ gurl 192.168.126.16:8983/solr/licenseIndex/select q=='*:*' sort=='id asc' rows==10 wt==json fl==id cursorMark=="*"
+GET /solr/licenseIndex/select?sort=id+asc&rows=10&wt=json&fl=id&cursorMark=%2A&q=%2A%3A%2A HTTP/1.1
+Host: 192.168.126.16:8983
+Accept: application/json
+Accept-Encoding: gzip, deflate
+Content-Type: application/json
+User-Agent: gurl/0.1.0
+
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Content-Type: text/plain;charset=UTF-8
+Date: Thu, 16 Sep 2021 02:28:44 GMT
+
+{"responseHeader":{"status":0,"QTime":15,"params":{"q":"*:*","fl":"id","cursorMark":"*","sort":"id asc","rows":"10","wt":"json"}},"response":{"numFound":509327,"start":0,"docs":[{"id":"000007c8-3d83-47c7-b9f0-1e0d15670599"},{"id":"00004d53-d76d-43c3-906d-90ff475bd1a2"},{"id":"000070fe-309f-4755-998e-2445cc66ef9f"},{"id":"0000744c-47dc-4c25-a63f-8132525a8cdf"},{"id":"0000ac46-3961-4fd4-aad6-25359cc382c5"},{"id":"0000e7c5-4994-415a-88ae-6abd0b300cb7"},{"id":"0001036a-226b-4bd9-b360-332d8cd10eed"},{"id":"00011136-8afa-47a8-953b-e8422854202e"},{"id":"00013d4c-7eda-4d3e-8b10-9d92be1b9739"},{"id":"00013dd9-7326-43d7-977d-60cdab8deb95"}]},"nextCursorMark":"AoE/BTAwMDEzZGQ5LTczMjYtNDNkNy05NzdkLTYwY2RhYjhkZWI5NQ=="}
+
+$ gurl 192.168.126.16:8983/solr/licenseIndex/select q=='*:*' sort=='id asc' rows==10 wt==json fl==id cursorMark=="AoE/BTAwMDEzZGQ5LTczMjYtNDNkNy05NzdkLTYwY2RhYjhkZWI5NQ=="
+GET /solr/licenseIndex/select?cursorMark=AoE%2FBTAwMDEzZGQ5LTczMjYtNDNkNy05NzdkLTYwY2RhYjhkZWI5NQ%3D%3D&q=%2A%3A%2A&sort=id+asc&rows=10&wt=json&fl=id HTTP/1.1
+Host: 192.168.126.16:8983
+Accept: application/json
+Accept-Encoding: gzip, deflate
+Content-Type: application/json
+User-Agent: gurl/0.1.0
+
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Content-Type: text/plain;charset=UTF-8
+Date: Thu, 16 Sep 2021 02:28:54 GMT
+
+{"responseHeader":{"status":0,"QTime":16,"params":{"q":"*:*","fl":"id","cursorMark":"AoE/BTAwMDEzZGQ5LTczMjYtNDNkNy05NzdkLTYwY2RhYjhkZWI5NQ==","sort":"id asc","rows":"10","wt":"json"}},"response":{"numFound":509327,"start":0,"docs":[{"id":"000152b0-e396-4fe8-96ec-20e851a11bb2"},{"id":"000176ab-2095-49eb-9346-77dae9937dab"},{"id":"00017f51-5618-4ce5-a2a2-9052c2d667cc"},{"id":"0001d75d-11ca-47a4-8b3a-5ec9f4860b74"},{"id":"00021e28-717e-41c3-a528-b54ea22877d8"},{"id":"000256ef-54c6-4f59-ba3e-840b039b3a47"},{"id":"0002a922-bc90-44b0-94ba-2dddaec402c5"},{"id":"0002d485-301f-406c-9d4f-79f85762d9b9"},{"id":"0002ed4f-3275-4e05-8a45-1f43bae361af"},{"id":"0002fe77-f4c8-4b1d-ac96-d9d89e3e5c32"}]},"nextCursorMark":"AoE/BTAwMDJmZTc3LWY0YzgtNGIxZC1hYzk2LWQ5ZDg5ZTNlNWMzMg=="}
+```
 ## Docker
 
 ### Solr Docker

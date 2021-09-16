@@ -10,3 +10,4 @@ solrdump*.rpm
 .DS_Store
 /badger-zz/
 /bb-license
+/.cursorMarks/

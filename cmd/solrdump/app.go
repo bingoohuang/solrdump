@@ -18,6 +18,8 @@ func (a Arg) Usage() string {
 Usage of %s:
   -max int       Max number of rows (default 10)
   -q string      SOLR query (default "*:*")
+  -f             Force a new query from cursorMark = "*"
+  -fl string     Field list of SOLR query result (empty for all, e.g. id)
   -rows int      Number of rows returned per request (default 10000)
   -bulk int      Number of rows in an elasticseach bulk (default 100)
   -server string SOLR server with index name, eg. localhost:8983/solr/example
@@ -34,14 +36,16 @@ type Arg struct {
 	Config  string `flag:"c" usage:"yml config filepath"`
 	Init    bool
 	Version bool
+	Force   bool `flag:"f"`
 
 	Routing      string `val:"routing"`
 	Server       string `required:"true"`
 	Q            string `val:"*:*"`
-	Max          int    `val:"10"`
-	Rows         int    `val:"10000"`
-	Bulk         int    `val:"100"`
-	Cursor       bool   `val:"true"`
+	Fl           string
+	Max          int  `val:"10"`
+	Rows         int  `val:"10000"`
+	Bulk         int  `val:"100"`
+	Cursor       bool `val:"true"`
 	RemoveFields []string
 	Output       []string
 	Verbose      int `flag:"v" count:"true"`
