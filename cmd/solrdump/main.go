@@ -110,7 +110,7 @@ func logCursor(wal *jj.WalLog, cursor string) {
 		log.Fatalf("write cursor wal, error: %v", err)
 	}
 
-	if lastIndex > 10 {
+	if lastIndex > 1000 {
 		wal.TruncateFront(lastIndex - 10)
 	}
 }
