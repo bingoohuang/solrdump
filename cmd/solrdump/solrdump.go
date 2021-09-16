@@ -21,8 +21,9 @@ func (a *Arg) prepareSolrQuery() {
 	a.query.Set("q", a.Q)
 	a.query.Set("sort", "id asc")
 	a.query.Set("rows", fmt.Sprintf("%d", a.Rows))
-	a.query.Set("fl", a.Fl)   // Field List
-	a.query.Set("wt", "json") // Specifies the Response Writer to be used to format the query response.
+	a.query.Set("fl", a.Fl)           // Field List
+	a.query.Set("wt", "json")         // Specifies the Response Writer to be used to format the query response.
+	a.query.Set("omitHeader", "true") //
 	a.SetCursor("*")
 }
 
@@ -80,7 +81,6 @@ func (a Arg) ReachedMax() bool { return a.Max > 0 && a.total >= a.Max }
 
 // SolrResponse is a SOLR response.
 type SolrResponse struct {
-	// Header   Header `json:"header"`
 	Response       Response `json:"response"`
 	NextCursorMark string   `json:"nextCursorMark"`
 }
@@ -89,15 +89,4 @@ type Response struct {
 	NumFound int               `json:"numFound"`
 	Start    int               `json:"start"`
 	Docs     []json.RawMessage `json:"docs"` // dependent on SOLR schema
-}
-
-type Header struct {
-	Status int `json:"status"`
-	QTime  int `json:"QTime"`
-	Params struct {
-		Query      string `json:"q"`
-		CursorMark string `json:"cursorMark"`
-		Sort       string `json:"sort"`
-		Rows       string `json:"rows"`
-	} `json:"params"`
 }
