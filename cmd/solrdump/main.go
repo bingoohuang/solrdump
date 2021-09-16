@@ -102,16 +102,16 @@ func (a *Arg) readLastCursor(wal *jj.WalLog) (err error) {
 }
 
 func logCursor(wal *jj.WalLog, cursor string) {
-	lastIndex, err := wal.LastIndex()
+	first, last, err := wal.Index()
 	if err != nil {
 		log.Fatalf("get cursor wal last index, error: %v", err)
 	}
-	if err := wal.Write(lastIndex+1, []byte(cursor)); err != nil {
+	if err := wal.Write(last+1, []byte(cursor)); err != nil {
 		log.Fatalf("write cursor wal, error: %v", err)
 	}
 
-	if lastIndex > 1000 {
-		wal.TruncateFront(lastIndex - 10)
+	if last-first > 1000 {
+		wal.TruncateFront(last - 10)
 	}
 }
 
