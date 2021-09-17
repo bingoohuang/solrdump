@@ -33,15 +33,16 @@ func (a *Arg) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGrou
 
 	u, _ := url.Parse(uri)
 	query := u.Query()
-	routing := query.Get("routing")
+
 	var routingExpr vars.Subs
-	if routing != "" {
+	if routing := query.Get("routing"); routing != "" {
 		query.Del("routing")
 		routingExpr = vars.ParseExpr(routing)
 	}
 	u.RawQuery = query.Encode()
 	uri = u.String()
 	b := &bytes.Buffer{}
+
 	for {
 		ok := a.numOrTicker(b, docCh, routingExpr)
 		outputHttp(uri, b.Bytes(), a.Verbose, a.printer)
