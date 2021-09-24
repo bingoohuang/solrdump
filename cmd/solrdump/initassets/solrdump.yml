@@ -1,13 +1,4 @@
-# MaxPoolSize value 进程池大小(默认 %d)
-MaxPoolSize: 0
-# Listen value 只取前N个检查(默认 :9337)
-Listen: ":9337"
-# WkVersion value Wk包装版本号, 0/1/1p/2/2p（默认 2)
-WkVersion: 2
-# EnableCacheDir 是否开启Wk的缓存目录（默认 false)
-EnableCacheDir: false
-
-# 最大查询行数
+# 最大查询行数, 0 表示不限制
 Max: 10
 # SOLR 查询表达式
 Q: "*:*"
@@ -27,7 +18,7 @@ RemoveFields:
 Output:
   - "noop"
   #- "192.168.2.8:9202/license/_bulk?routing=@holderIdentityNum.0"
-# 反显模式
+# 反显模式，调试的时候，设置为2，正式运行后建议改成1
 Verbose: 2
 # bulk 模式中，routing key 的名称，7.14需要 routing, 老版本可能是 _routing
 Routing: routing
