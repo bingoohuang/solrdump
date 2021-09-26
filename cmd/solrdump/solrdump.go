@@ -5,6 +5,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"io/ioutil"
 	"net/url"
+	"time"
 
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/ss"
@@ -33,14 +34,14 @@ func (a *Arg) prepareSolrQuery() {
 }
 
 func (a *Arg) SolrDump(url string) (string, error) {
+	start := time.Now()
 	resp, err := pester.GetContext(a.Context, url)
 	if err != nil {
 		return "", fmt.Errorf("http %s: %w", url, err)
 	}
 	defer rest.DiscardCloseBody(resp)
 
-	code := resp.StatusCode
-	if code >= 400 {
+	if code := resp.StatusCode; code >= 400 {
 		b, _ := ioutil.ReadAll(resp.Body)
 		return "", fmt.Errorf("resp status: %d body (%d): %s", code, len(b), string(b))
 	}
@@ -55,7 +56,7 @@ func (a *Arg) SolrDump(url string) (string, error) {
 	docs := len(r.Response.Docs)
 	if docs > 0 {
 		a.total += docs
-		a.printer.Put(fmt.Sprintf("fetched %d/%d docs", a.total, r.Response.NumFound))
+		a.printer.Put(fmt.Sprintf("fetched %d/%d docs, cost %s", a.total, r.Response.NumFound, time.Since(start)))
 	}
 
 	if a.Cursor {

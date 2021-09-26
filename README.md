@@ -103,7 +103,7 @@ See also: *Fetching A Large Number of Sorted Results: Cursors*
 > document returned to the client are used to compute a "mark" representing a
 > logical point in the ordered space of sort values.
 
-`http://192.168.2.6:8983/solr/zz/select?q=*:*&wt=json&cursorMark=*&sort=id asc`
+`http://192.168.2.6:8983/solr/zz/select?q=*:*&wt=json&cursorMark=*&sort=id+asc&omitHeader=true&rows=1000`
 
 ```json
 {
