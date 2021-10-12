@@ -16,9 +16,10 @@ also [efficient deep paging with cursors](https://solr.pl/en/2014/03/10/solr-4-7
 ## Features
 
 1. `_version_` deleted from the result
-2. `output="http://127.0.0.1:9092/zz/docs?routing=@path"` `@path` in the url will be evaluated by `{GjsonPath}`
+2. `-output="http://127.0.0.1:9092/zz/docs?routing=@path"` `@path` in the url will be evaluated by `{GjsonPath}`
    , [Syntax](https://github.com/bingoohuang/jj/blob/master/SYNTAX.md)
-3. `output="http://127.0.0.1:9092/zz/_bulk?routing=@path"` will change to bulk mode for elasticsearch automatically.
+3. `-output="http://127.0.0.1:9092/zz/_bulk?routing=@path"` will change to bulk mode for elasticsearch automatically.
+4. `GOLOG_STDOUT=true solrdump -server 1.2.1.16:8983/solr/licenseIndex -q "modified:[2021-09-15T00:00:46Z TO *]" -f` to incrementally dump last modified data.
 
 ## Usage
 

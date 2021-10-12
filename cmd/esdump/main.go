@@ -111,7 +111,7 @@ func Post(url string, payload []byte) (*http.Response, time.Duration) {
 }
 
 func (a *Arg) createOut() Out {
-	//if a.Out == "" || a.Out == "stdout" {
+	// if a.Out == "" || a.Out == "stdout" {
 	return &Stdout{}
 }
 

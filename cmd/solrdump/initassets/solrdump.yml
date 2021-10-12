@@ -2,6 +2,8 @@
 Max: 10
 # SOLR 查询表达式
 Q: "*:*"
+# Sort 排序表达式, 例如 id asc,name desc
+Sort: ""
 # 每次查询行数
 Rows: 10000
 # ES 批量模式一批写入多少行

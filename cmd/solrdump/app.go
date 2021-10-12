@@ -18,6 +18,7 @@ func (a Arg) Usage() string {
 Usage of %s:
   -max int       Max number of rows (default 10)
   -q string      SOLR query (default "*:*")
+  -sort string   SOLR result sort (default "id asc")
   -f             Force a new query from cursorMark = "*"
   -fl string     Field list of SOLR query result (empty for all, e.g. id)
   -rows int      Number of rows returned per request (default 10000)
@@ -36,19 +37,20 @@ type Arg struct {
 	Config  string `flag:"c" usage:"yml config filepath"`
 	Init    bool
 	Version bool
-	Force   bool `flag:"f"`
+	Force   bool `flag:",f"`
 
-	Routing      string `val:"routing"`
-	Server       string `required:"true"`
+	Routing      string `flag:",r" val:"routing"`
+	Server       string `flag:",s" required:"true"`
 	Q            string `val:"*:*"`
+	Sort         string
 	Fl           string
 	Max          int  `val:"10"`
 	Rows         int  `val:"10000"`
 	Bulk         int  `val:"100"`
 	Cursor       bool `val:"true"`
 	RemoveFields []string
-	Output       []string
-	Verbose      int `flag:"v" count:"true"`
+	Output       []string `flag:",o"`
+	Verbose      int      `flag:"v" count:"true"`
 
 	baseURL  string
 	query    url.Values

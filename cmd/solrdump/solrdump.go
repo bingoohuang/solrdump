@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/jsoni"
 	"io/ioutil"
 	"net/url"
+	"strings"
 	"time"
+
+	"github.com/bingoohuang/gg/pkg/jsoni"
+	"github.com/bingoohuang/gg/pkg/jsoni/extra"
+	"github.com/bingoohuang/gg/pkg/strcase"
 
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/ss"
@@ -20,17 +24,30 @@ func (a *Arg) prepareSolrQuery() {
 	a.query = url.Values{}
 	// https://solr.apache.org/guide/6_6/the-standard-query-parser.html#the-standard-query-parser
 	// field:[* TO 100]   field:[100 TO *]
-	// createdate:[1976-03-06T23:59:59.999Z TO *]
+	// datefield:[1976-03-06T23:59:59.999Z TO *]
+	// datefield:[2000-11-01 TO 2014-12-01]
 	// -inStock:false finds all field values where inStock is not false
 	// -field:[* TO *] finds all documents without a value for field
 	a.query.Set("q", a.Q)
 	// https://solr.apache.org/guide/6_6/common-query-parameters.html
-	a.query.Set("sort", "id asc")
+	if a.Sort != "" && !ss.HasSuffix(strings.ToLower(a.Sort), "asc", "desc") {
+		a.Sort += " asc"
+	}
+	a.query.Set("sort", ss.Or(a.Sort, "id asc"))
 	a.query.Set("rows", fmt.Sprintf("%d", a.Rows))
-	a.query.Set("fl", a.Fl)           // Field List
-	a.query.Set("wt", "json")         // Specifies the Response Writer to be used to format the query response.
-	a.query.Set("omitHeader", "true") //
+	a.query.Set("fl", a.Fl)   // Field List
+	a.query.Set("wt", "json") // Specifies the Response Writer to be used to format the query response.
+	a.query.Set("omitHeader", "true")
 	a.SetCursor("*")
+}
+
+// Jsoni tries to be 100% compatible with standard library behavior
+var Jsoni = jsoni.Config{
+	EscapeHTML: true,
+}.Froze()
+
+func init() {
+	Jsoni.RegisterExtension(&extra.NamingStrategyExtension{Translate: strcase.ToCamelLower})
 }
 
 func (a *Arg) SolrDump(url string) (string, error) {
@@ -47,7 +64,7 @@ func (a *Arg) SolrDump(url string) (string, error) {
 	}
 
 	var r SolrResponse
-	if err := jsoni.NewDecoder(resp.Body).Decode(a.Context, &r); err != nil {
+	if err := Jsoni.NewDecoder(resp.Body).Decode(a.Context, &r); err != nil {
 		return "", fmt.Errorf("decode: %w", err)
 	}
 
