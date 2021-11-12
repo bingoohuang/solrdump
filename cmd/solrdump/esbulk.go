@@ -39,12 +39,18 @@ func (a *Arg) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGrou
 		query.Del("routing")
 		routingExpr = vars.ParseExpr(routing)
 	}
+	var idExpr vars.Subs
+	if id := query.Get("id"); id != "" {
+		query.Del("id")
+		idExpr = vars.ParseExpr(id)
+	}
+
 	u.RawQuery = query.Encode()
 	uri = u.String()
 	b := &bytes.Buffer{}
 
 	for {
-		ok := a.numOrTicker(b, docCh, routingExpr)
+		ok := a.numOrTicker(b, docCh, routingExpr, idExpr)
 		outputHttp(uri, b.Bytes(), a.Verbose, a.printer)
 		if !ok {
 			return
@@ -52,7 +58,7 @@ func (a *Arg) elasticSearchBulk(uri string, docCh chan []byte, wg *sync.WaitGrou
 	}
 }
 
-func (a *Arg) numOrTicker(b *bytes.Buffer, docCh chan []byte, routingExpr vars.Subs) (continued bool) {
+func (a *Arg) numOrTicker(b *bytes.Buffer, docCh chan []byte, routingExpr, idExpr vars.Subs) (continued bool) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
@@ -70,12 +76,12 @@ func (a *Arg) numOrTicker(b *bytes.Buffer, docCh chan []byte, routingExpr vars.S
 			if !ok {
 				return false
 			}
-
+			_id := idExpr.Eval(&JsonValue{Doc: doc}).(string) // 配置文件指定 id 字段，然后复制为 es 的 _id： https://blog.csdn.net/neweastsun/article/details/91506909
 			if len(routingExpr) > 0 {
 				routing := routingExpr.Eval(&JsonValue{Doc: doc}).(string)
-				b.Write([]byte(`{"index":{"_type":"docs","` + a.Routing + `":"` + routing + `"}}`))
+				b.Write([]byte(`{"index":{"_type":"docs","_id":"` + _id + `","` + a.Routing + `":"` + routing + `"}}`))
 			} else {
-				b.Write([]byte(`{"index":{"_type":"docs"}}`))
+				b.Write([]byte(`{"index":{"_type":"docs","_id":"` + _id + `"}}`))
 			}
 
 			b.Write([]byte("\n"))
