@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -183,15 +184,31 @@ func (a *Arg) createOutputFn() func(doc []byte) {
 	var fns []func(doc []byte)
 	for _, out := range a.Output {
 		var fn func(doc []byte)
-		if uri, ok := rest.MaybeURL(out); ok {
-			if fn = a.createBulkOutput(uri); fn == nil {
-				fn = func(doc []byte) { outputHttp(uri, doc, a.Verbose, a.printer) }
+		const prefix = "find-duplicate:"
+		if strings.HasPrefix(out, prefix) {
+			byKey := out[len(prefix):]
+			var lastValue string
+
+			fn = func(doc []byte) {
+				value := jj.GetBytes(doc, byKey).String()
+				if lastValue == value {
+					fmt.Printf("%s\n", doc)
+				} else {
+					fmt.Println()
+				}
+				lastValue = value
 			}
 		} else {
-			w := rotate.NewQueueWriter(osx.ExpandHome(out), rotate.WithContext(a.Context),
-				rotate.WithOutChanSize(1000), rotate.WithAllowDiscard(false))
-			a.closers = append(a.closers, w)
-			fn = func(doc []byte) { w.Send(string(doc)+"\n", true) }
+			if uri, ok := rest.MaybeURL(out); ok {
+				if fn = a.createBulkOutput(uri); fn == nil {
+					fn = func(doc []byte) { outputHttp(uri, doc, a.Verbose, a.printer) }
+				}
+			} else {
+				w := rotate.NewQueueWriter(osx.ExpandHome(out), rotate.WithContext(a.Context),
+					rotate.WithOutChanSize(1000), rotate.WithAllowDiscard(false))
+				a.closers = append(a.closers, w)
+				fn = func(doc []byte) { w.Send(string(doc)+"\n", true) }
+			}
 		}
 		fns = append(fns, fn)
 	}
