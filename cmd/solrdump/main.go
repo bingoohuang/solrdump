@@ -5,17 +5,18 @@ import (
 	"crypto/tls"
 	"embed"
 	"fmt"
+	"github.com/bingoohuang/gg/pkg/delay"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/bingoohuang/golog"
 
 	"github.com/bingoohuang/gg/pkg/flagparse"
-	"github.com/bingoohuang/gg/pkg/jihe"
 	"github.com/bingoohuang/gg/pkg/osx"
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/rotate"
@@ -33,7 +34,7 @@ func main() {
 	flagparse.Parse(a,
 		flagparse.AutoLoadYaml("c", "solrdump.yml"),
 		flagparse.ProcessInit(&initAssets))
-	defer golog.SetupLogrus().OnExit()
+	defer golog.Setup().OnExit()
 	log.Printf("started with config: %+v created", a)
 	start := time.Now()
 
@@ -78,7 +79,8 @@ func main() {
 
 	cancelFunc()
 	cost := time.Since(start)
-	log.Printf("process %d docs, rate %f docs/s, cost %s", a.total, float64(a.total)/cost.Seconds(), cost)
+	log.Printf("process %d docs, rate %f docs/s, cost %s, dups: %d",
+		a.total, float64(a.total)/cost.Seconds(), cost, atomic.LoadUint32(&totalDups))
 }
 
 func (a *Arg) readLastCursor(wal *jj.WalLog) (err error) {
@@ -140,6 +142,8 @@ func (a *Arg) processResponse(resp Response) {
 	}
 }
 
+var totalDups uint32
+
 func (a *Arg) PostProcess() {
 	var err error
 
@@ -159,7 +163,7 @@ func (a *Arg) PostProcess() {
 
 	if a.Verbose <= 2 {
 		interval := time.Duration(ss.Ifi(a.Verbose >= 1, 5, 10)) * time.Second
-		printer := jihe.NewDelayChan(a.Context, func(i interface{}) {
+		printer := delay.NewChan(a.Context, func(_, i interface{}) {
 			log.Printf(i.(string))
 		}, interval)
 		a.closers = append(a.closers, printer)
@@ -189,12 +193,18 @@ func (a *Arg) createOutputFn() func(doc []byte) {
 			byKey := out[len(prefix):]
 			var lastValue string
 
+			lastDups := 0
+
 			fn = func(doc []byte) {
 				value := jj.GetBytes(doc, byKey).String()
 				if lastValue == value {
+					lastDups++
+					if lastDups == 1 {
+						atomic.AddUint32(&totalDups, 1)
+					}
 					fmt.Printf("%s\n", doc)
 				} else {
-					fmt.Println()
+					lastDups = 0
 				}
 				lastValue = value
 			}

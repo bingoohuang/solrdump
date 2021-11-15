@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/bingoohuang/gg/pkg/jsoni"
@@ -73,7 +74,8 @@ func (a *Arg) SolrDump(url string) (string, error) {
 	docs := len(r.Response.Docs)
 	if docs > 0 {
 		a.total += docs
-		a.printer.Put(fmt.Sprintf("fetched %d/%d docs, cost %s", a.total, r.Response.NumFound, time.Since(start)))
+		a.printer.Put(fmt.Sprintf("fetched %d/%d docs, cost %s, dups: %d",
+			a.total, r.Response.NumFound, time.Since(start), atomic.LoadUint32(&totalDups)))
 	}
 
 	if a.Cursor {
