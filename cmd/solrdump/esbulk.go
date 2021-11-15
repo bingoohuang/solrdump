@@ -81,8 +81,8 @@ func (a *Arg) numOrTicker(b *bytes.Buffer, docCh chan []byte, routingExpr vars.S
 				bulkFirstLine = []byte(`{"index":{"_type":"docs"}}`)
 			}
 
-			if id := jj.GetBytes(doc, "id").String(); id != "" {
-				bulkFirstLine, _ = jj.SetBytes(bulkFirstLine, "index._id", id)
+			if lc := jj.GetBytes(doc, "licenseCode").String(); lc != "" { // licenseCode 是唯一的，作为唯一表示。和更新操作保持一致
+				bulkFirstLine, _ = jj.SetBytes(bulkFirstLine, "index._id", lc)
 			}
 
 			b.Write(bulkFirstLine)
