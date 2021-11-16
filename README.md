@@ -63,13 +63,15 @@ can be performed.
 
 ## Resources
 
-1. [o19s/solr-to-es](https://github.com/o19s/solr-to-es)
-2. [solr cursor select query](https://github.com/frizner/glsolr)
-3. [frizner/solrdump](https://github.com/frizner/solrdump)
-4. [hectorcorrea/solr-for-newbies](https://github.com/hectorcorrea/solr-for-newbies)
-5. [online json-generator](https://www.json-generator.com)
-6. [SOLR bash recipes for creating, deleting or truncating collections, monitoring and searching](https://gist.github.com/CesarCapillas/a796c0e7cba10ac02213c7f3485d6e90#file-delete-by-id-sh)
-7. [Deleting documents in SOLR](https://www.zylk.net/en/web-2-0/blog/-/blogs/deleting-documents-in-solr)
+1. [find duplicates by facet](https://solr.apache.org/guide/6_6/faceting.html#Faceting-Thefacet.limitParameter)
+   `http://192.168.126.16:8983/solr/licenseIndex/select?q=*:*&rows=1&fl=*&wt=json&facet=true&facet.field=licenseCode&facet.limit=-1&facet.mincount=2`
+2. [o19s/solr-to-es](https://github.com/o19s/solr-to-es)
+3. [solr cursor select query](https://github.com/frizner/glsolr)
+4. [frizner/solrdump](https://github.com/frizner/solrdump)
+5. [hectorcorrea/solr-for-newbies](https://github.com/hectorcorrea/solr-for-newbies)
+6. [online json-generator](https://www.json-generator.com)
+7. [SOLR bash recipes for creating, deleting or truncating collections, monitoring and searching](https://gist.github.com/CesarCapillas/a796c0e7cba10ac02213c7f3485d6e90#file-delete-by-id-sh)
+8. [Deleting documents in SOLR](https://www.zylk.net/en/web-2-0/blog/-/blogs/deleting-documents-in-solr)
     ```sh
      Via post command:
      $ post -c gettingstarted -d '<delete><id>44C</id></delete>'

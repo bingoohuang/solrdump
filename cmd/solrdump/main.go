@@ -13,6 +13,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode"
 
 	"github.com/bingoohuang/golog"
 
@@ -188,9 +189,17 @@ func (a *Arg) createOutputFn() func(doc []byte) {
 	var fns []func(doc []byte)
 	for _, out := range a.Output {
 		var fn func(doc []byte)
-		const prefix = "find-duplicate:"
+		const prefix = "find-duplicate"
 		if strings.HasPrefix(out, prefix) {
-			byKey := out[len(prefix):]
+			a.Cursor = false // 找重复的时候，不能使用cursor模式（该模式下，必须有唯一索引作为排序）
+			if a.Sort == "" {
+				log.Fatalf("Sort argument should be specified when find-duplicate")
+			}
+			byKey := strings.TrimPrefix(out[len(prefix):], ":")
+			if byKey == "" {
+				byKey = parseKeyFromSort(a.Sort)
+			}
+
 			var lastValue string
 
 			lastDups := 0
@@ -228,4 +237,16 @@ func (a *Arg) createOutputFn() func(doc []byte) {
 			f(doc)
 		}
 	}
+}
+
+func parseKeyFromSort(sort string) string {
+	sort = strings.TrimSpace(sort)
+	pos := strings.IndexFunc(sort, func(r rune) bool {
+		return unicode.IsSpace(r)
+	})
+	if pos < 0 {
+		return sort
+	}
+
+	return sort[:pos]
 }

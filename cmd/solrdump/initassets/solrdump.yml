@@ -19,7 +19,7 @@ RemoveFields:
 # 注： :9202/license/_bulk 为 bulk api 写入, :9202/license/docs 为单条普通写入，性能很差
 Output:
   - "noop"
-  # "find-duplicate:licenseCode" # 一定要配合 Sort: 1. licenseCode asc ； 2. Cursor=false
+  # "find-duplicate" #  注意1. 一定要配合 Sort: licenseCode asc  注意1. Cursor 会被自动设置为 false
   #- "192.168.2.8:9202/license/_bulk?routing=@holderIdentityNum.0"
 # 反显模式，调试的时候，设置为2，正式运行后建议改成1
 Verbose: 2
