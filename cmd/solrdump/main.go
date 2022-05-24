@@ -146,10 +146,10 @@ func (a *Arg) processResponse(resp Response) {
 var totalDups uint32
 
 func (a *Arg) PostProcess() {
-	var err error
-
-	if a.baseURL, err = rest.FixURI(a.Server); err != nil {
-		log.Fatalf("bad server %s, err: %v", a.Server, err)
+	if result := rest.FixURI(a.Server); !result.OK() {
+		log.Fatalf("bad server %s, err: %v", a.Server, result.Err)
+	} else {
+		a.baseURL = result.Data.String()
 	}
 
 	if a.Max > 0 && a.Max < a.Rows {
