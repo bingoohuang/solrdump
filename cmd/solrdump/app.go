@@ -34,33 +34,37 @@ Usage of %s:
 }
 
 type Arg struct {
-	Config  string `flag:"c" usage:"yml config filepath"`
-	Init    bool
-	Version bool
-	Force   bool `flag:",f"`
+	Context context.Context
 
-	Routing      string `flag:",r" val:"routing"`
-	Server       string `flag:",s" required:"true"`
-	Q            string `val:"*:*"`
-	Sort         string
-	Fl           string
-	Max          int  `val:"10"`
-	Rows         int  `val:"10000"`
-	Bulk         int  `val:"100"`
-	Cursor       bool `val:"true"`
-	RemoveFields []string
-	Output       []string `flag:",o"`
-	Verbose      int      `flag:"v" count:"true"`
+	printer Printer
 
-	baseURL  string
-	query    url.Values
-	total    int
-	outputFn func(doc []byte)
-	Context  context.Context
-	closers  []io.Closer
-
-	printer    Printer
+	outputWg   *sync.WaitGroup
 	ResponseCh chan Response
 
-	outputWg *sync.WaitGroup
+	query    url.Values
+	outputFn func(doc []byte)
+	Fl       string
+	Sort     string
+
+	baseURL string
+	Q       string `val:"*:*"`
+	Server  string `flag:",s" required:"true"`
+	Config  string `flag:"c" usage:"yml config filepath"`
+
+	Routing string `flag:",r" val:"routing"`
+	closers []io.Closer
+
+	RemoveFields []string
+	Output       []string `flag:",o"`
+	total        int
+	Verbose      int `flag:"v" count:"true"`
+
+	Bulk   int  `val:"100"`
+	Rows   int  `val:"10000"`
+	Max    int  `val:"10"`
+	Cursor bool `val:"true"`
+	Force  bool `flag:",f"`
+
+	Version bool
+	Init    bool
 }

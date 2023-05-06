@@ -5,7 +5,7 @@ pkgver=0.1.1
 pkgrel=0
 pkgdesc="Fetch SOLR documents efficiently with cursors."
 arch=('i686' 'x86_64')
-url="https://github.com/gobars/solrdump"
+url="https://github.com/bingoohuang/solrdump"
 license=('GPL')
 makedepends=('go' 'git')
 options=('!strip' '!emptydirs')
@@ -13,7 +13,7 @@ conflicts=("${pkgname}-bin")
 replaces=("${pkgname}-bin")
 source=("${url}/archive/v${pkgver}.tar.gz")
 sha256sums=('508c31d7b1d7398ed5d7f7852b5046239870f0b3ef25749fbeb68e09e9c6c090')
-_gourl='github.com/gobars/solrdump'
+_gourl='github.com/bingoohuang/solrdump'
 
 prepare() {
   export GOPATH="${srcdir}"

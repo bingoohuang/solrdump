@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/vars"
-	"github.com/gobars/solrdump/pester"
 )
 
 func outputHttp(uri0 string, doc []byte, verbose int, printer Printer) {
@@ -20,21 +18,22 @@ func outputHttp(uri0 string, doc []byte, verbose int, printer Printer) {
 	}
 
 	start := time.Now()
-	r, err := pester.Post(uri, rest.ContentTypeJSON, bytes.NewReader(doc))
+	r, err := restyClient.R().
+		SetHeader("Content-Type", rest.ContentTypeJSON).
+		SetBody(doc).Post(uri)
 	cost := time.Since(start)
 	if err != nil {
 		log.Printf("sent to %s error %v", uri, err)
 		return
 	}
 
-	defer rest.DiscardCloseBody(r)
-
-	if r.StatusCode < 200 || r.StatusCode >= 300 || verbose >= 2 {
+	statusCode := r.StatusCode()
+	if statusCode < 200 || statusCode >= 300 || verbose >= 2 {
 		printer.PutKey("request body", string(doc))
 	}
 
 	if verbose >= 2 {
-		body, _ := rest.ReadCloseBody(r)
+		body := r.Body()
 		printer.PutKey("response", fmt.Sprintf("sent cost: %s status: %d, body: %s", cost, r.StatusCode, body))
 	} else if verbose >= 1 {
 		printer.PutKey("response", fmt.Sprintf("sent cost: %s status: %d", cost, r.StatusCode))

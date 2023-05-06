@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"strings"
 	"sync/atomic"
@@ -10,11 +10,9 @@ import (
 
 	"github.com/bingoohuang/gg/pkg/jsoni"
 	"github.com/bingoohuang/gg/pkg/jsoni/extra"
-	"github.com/bingoohuang/gg/pkg/strcase"
-
-	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/ss"
-	"github.com/gobars/solrdump/pester"
+	"github.com/bingoohuang/gg/pkg/strcase"
+	"github.com/go-resty/resty/v2"
 )
 
 func (a Arg) createSolrLink() string {
@@ -51,21 +49,23 @@ func init() {
 	Jsoni.RegisterExtension(&extra.NamingStrategyExtension{Translate: strcase.ToCamelLower})
 }
 
+// Create a Resty Client
+var restyClient = resty.New()
+
 func (a *Arg) SolrDump(url string) (string, error) {
 	start := time.Now()
-	resp, err := pester.GetContext(a.Context, url)
+	resp, err := restyClient.R().SetContext(a.Context).Get(url)
 	if err != nil {
 		return "", fmt.Errorf("http %s: %w", url, err)
 	}
-	defer rest.DiscardCloseBody(resp)
 
-	if code := resp.StatusCode; code >= 400 {
-		b, _ := ioutil.ReadAll(resp.Body)
+	b := resp.Body()
+	if code := resp.StatusCode(); code >= 400 {
 		return "", fmt.Errorf("resp status: %d body (%d): %s", code, len(b), string(b))
 	}
 
 	var r SolrResponse
-	if err := Jsoni.NewDecoder(resp.Body).Decode(a.Context, &r); err != nil {
+	if err := Jsoni.NewDecoder(bytes.NewReader(b)).Decode(a.Context, &r); err != nil {
 		return "", fmt.Errorf("decode: %w", err)
 	}
 
@@ -106,12 +106,12 @@ func (a Arg) ReachedMax() bool { return a.Max > 0 && a.total >= a.Max }
 
 // SolrResponse is a SOLR response.
 type SolrResponse struct {
-	Response       Response `json:"response"`
 	NextCursorMark string   `json:"nextCursorMark"`
+	Response       Response `json:"response"`
 }
 
 type Response struct {
+	Docs     []jsoni.RawMessage `json:"docs"` // dependent on SOLR schema
 	NumFound int                `json:"numFound"`
 	Start    int                `json:"start"`
-	Docs     []jsoni.RawMessage `json:"docs"` // dependent on SOLR schema
 }

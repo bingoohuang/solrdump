@@ -12,7 +12,7 @@ type JsonValue struct {
 	Doc []byte
 }
 
-func (j *JsonValue) Value(name, _ string) interface{} { return jj.GetBytes(j.Doc, name).String() }
+func (j *JsonValue) Value(name, _, _ string) interface{} { return jj.GetBytes(j.Doc, name).String() }
 
 type Printer interface {
 	io.Closer

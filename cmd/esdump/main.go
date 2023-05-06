@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -13,7 +11,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/sigx"
 	"github.com/bingoohuang/jj"
-	"github.com/gobars/solrdump/pester"
+	"github.com/go-resty/resty/v2"
 )
 
 func (Arg) VersionInfo() string { return "0.1.2 2021-06-10 13:48:53" }
@@ -40,10 +38,10 @@ type Arg struct {
 	Index   string `val:"zz"`
 	Type    string `val:"_doc"`
 	Scroll  string `val:"1m"`
-	Max     int    `val:"10000"`
 	Query   string
 	Filter  string `val:"hits.hits.#._source"`
 	Out     string
+	Max     int `val:"10000"`
 	Version bool
 }
 
@@ -60,7 +58,7 @@ func main() {
 	// uri := `http://192.168.126.5:9202/license/docs/_search?scroll=1m`
 	uri, _ := rest.NewURL(a.Es).Paths(a.Index, a.Type, `/_search`).Query("scroll", a.Scroll).Build()
 
-	r, tim := Post(uri, []byte(a.Query))
+	body, tim := Post(uri, []byte(a.Query))
 	cost := tim
 
 	scrollUri, _ := rest.NewURL(a.Es).Paths("/_search/scroll").Build()
@@ -70,7 +68,6 @@ func main() {
 
 	for {
 		hits := 0
-		body, _ := rest.ReadCloseBody(r)
 		jj.GetBytes(body, a.Filter).ForEach(func(_, c jj.Result) bool {
 			hits++
 			if err := out.Output(c.String()); err != nil {
@@ -94,20 +91,23 @@ func main() {
 			scrollPayload, _ = jj.SetBytes(payloadTemplate, "scroll_id", v.String())
 		}
 
-		r, tim = Post(scrollUri, scrollPayload)
+		body, tim = Post(scrollUri, scrollPayload)
 		cost += tim
 	}
 }
 
-func Post(url string, payload []byte) (*http.Response, time.Duration) {
+// Create a Resty Client
+var restyClient = resty.New()
+
+func Post(url string, payload []byte) ([]byte, time.Duration) {
 	start := time.Now()
-	r, err := pester.Post(url, rest.ContentTypeJSON, bytes.NewReader(payload))
+	r, err := restyClient.R().SetHeader("Content-Type", rest.ContentTypeJSON).SetBody(payload).Post(url)
 	cost := time.Since(start)
 	if err != nil {
 		panic(err)
 	}
 
-	return r, cost
+	return r.Body(), cost
 }
 
 func (a *Arg) createOut() Out {

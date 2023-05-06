@@ -7,7 +7,7 @@ BuildArch:  x86_64
 BuildRoot:  %{_tmppath}/%{name}-build
 Group:      System/Base
 Vendor:     Leipzig University Library, https://www.ub.uni-leipzig.de
-URL:        https://github.com/gobars/solrdump
+URL:        https://github.com/bingoohuang/solrdump
 
 %description
 

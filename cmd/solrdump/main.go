@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"embed"
 	"fmt"
-	"github.com/bingoohuang/gg/pkg/delay"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,14 +14,14 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/bingoohuang/golog"
-
+	"github.com/bingoohuang/gg/pkg/delay"
 	"github.com/bingoohuang/gg/pkg/flagparse"
 	"github.com/bingoohuang/gg/pkg/osx"
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/rotate"
 	"github.com/bingoohuang/gg/pkg/sigx"
 	"github.com/bingoohuang/gg/pkg/ss"
+	"github.com/bingoohuang/golog"
 	"github.com/bingoohuang/jj"
 )
 
@@ -43,12 +42,14 @@ func main() {
 
 	wal, err := jj.WalOpen(".cursorMarks", &jj.WalOptions{LogFormat: jj.JSONFormat})
 	if err != nil {
-		log.Fatalf("failed to open cursor wal: %v", err)
+		log.Printf("E! failed to open cursor wal: %v", err)
+		return
 	}
 	defer wal.Close()
 
 	if err := a.readLastCursor(wal); err != nil {
-		log.Fatalf("failed to read last cursor: %v", err)
+		log.Printf("E! failed to read last cursor: %v", err)
+		return
 	}
 
 	for !a.ReachedMax() {
@@ -60,7 +61,8 @@ func main() {
 
 		cursor, err := a.SolrDump(link)
 		if err != nil {
-			log.Fatalf("error: %v", err)
+			log.Printf("E! %v", err)
+			return
 		}
 
 		logCursor(wal, cursor)
@@ -241,9 +243,7 @@ func (a *Arg) createOutputFn() func(doc []byte) {
 
 func parseKeyFromSort(sort string) string {
 	sort = strings.TrimSpace(sort)
-	pos := strings.IndexFunc(sort, func(r rune) bool {
-		return unicode.IsSpace(r)
-	})
+	pos := strings.IndexFunc(sort, unicode.IsSpace)
 	if pos < 0 {
 		return sort
 	}
