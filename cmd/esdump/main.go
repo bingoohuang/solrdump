@@ -11,7 +11,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/rest"
 	"github.com/bingoohuang/gg/pkg/sigx"
 	"github.com/bingoohuang/jj"
-	"github.com/go-resty/resty/v2"
+	"github.com/imroc/req/v3"
 )
 
 func (Arg) VersionInfo() string { return "0.1.2 2021-06-10 13:48:53" }
@@ -97,7 +97,7 @@ func main() {
 }
 
 // Create a Resty Client
-var restyClient = resty.New()
+var restyClient = req.C()
 
 func Post(url string, payload []byte) ([]byte, time.Duration) {
 	start := time.Now()
@@ -107,7 +107,7 @@ func Post(url string, payload []byte) ([]byte, time.Duration) {
 		panic(err)
 	}
 
-	return r.Body(), cost
+	return r.Bytes(), cost
 }
 
 func (a *Arg) createOut() Out {

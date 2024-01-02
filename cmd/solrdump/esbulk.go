@@ -75,7 +75,11 @@ func (a *Arg) numOrTicker(b *bytes.Buffer, docCh chan []byte, routingExpr vars.S
 
 			var bulkFirstLine []byte
 			if len(routingExpr) > 0 {
-				routing := routingExpr.Eval(&JsonValue{Doc: doc}).(string)
+				evalResult, err := routingExpr.Eval(&JsonValue{Doc: doc})
+				if err != nil {
+
+				}
+				routing := evalResult.(string)
 				bulkFirstLine = []byte(`{"index":{"_type":"docs","` + a.Routing + `":"` + routing + `"}}`)
 			} else {
 				bulkFirstLine = []byte(`{"index":{"_type":"docs"}}`)

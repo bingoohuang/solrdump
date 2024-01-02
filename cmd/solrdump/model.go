@@ -12,19 +12,21 @@ type JsonValue struct {
 	Doc []byte
 }
 
-func (j *JsonValue) Value(name, _, _ string) interface{} { return jj.GetBytes(j.Doc, name).String() }
+func (j *JsonValue) Value(name, _, _ string) (any, error) {
+	return jj.GetBytes(j.Doc, name).String(), nil
+}
 
 type Printer interface {
 	io.Closer
-	Put(v interface{})
-	PutKey(k string, v interface{})
+	Put(v any)
+	PutKey(k string, v any)
 }
 
 type LogPrinter struct{}
 
-func (l LogPrinter) Close() error                   { return nil }
-func (l LogPrinter) Put(v interface{})              { log.Print(v) }
-func (l LogPrinter) PutKey(k string, v interface{}) { log.Print(fmt.Sprintf("%s: %v", k, v)) }
+func (l LogPrinter) Close() error           { return nil }
+func (l LogPrinter) Put(v any)              { log.Print(v) }
+func (l LogPrinter) PutKey(k string, v any) { log.Print(fmt.Sprintf("%s: %v", k, v)) }
 
 type closeFn func()
 

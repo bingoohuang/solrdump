@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net/url"
 	"strings"
@@ -12,7 +11,7 @@ import (
 	"github.com/bingoohuang/gg/pkg/jsoni/extra"
 	"github.com/bingoohuang/gg/pkg/ss"
 	"github.com/bingoohuang/gg/pkg/strcase"
-	"github.com/go-resty/resty/v2"
+	"github.com/imroc/req/v3"
 )
 
 func (a Arg) createSolrLink() string {
@@ -50,23 +49,19 @@ func init() {
 }
 
 // Create a Resty Client
-var restyClient = resty.New()
+var restyClient = req.C()
 
 func (a *Arg) SolrDump(url string) (string, error) {
 	start := time.Now()
-	resp, err := restyClient.R().SetContext(a.Context).Get(url)
+	var r SolrResponse
+
+	resp, err := restyClient.R().SetContext(a.Context).SetSuccessResult(&r).Get(url)
 	if err != nil {
 		return "", fmt.Errorf("http %s: %w", url, err)
 	}
-
-	b := resp.Body()
-	if code := resp.StatusCode(); code >= 400 {
+	if code := resp.StatusCode; code >= 400 {
+		b := resp.Bytes()
 		return "", fmt.Errorf("resp status: %d body (%d): %s", code, len(b), string(b))
-	}
-
-	var r SolrResponse
-	if err := Jsoni.NewDecoder(bytes.NewReader(b)).Decode(a.Context, &r); err != nil {
-		return "", fmt.Errorf("decode: %w", err)
 	}
 
 	a.ResponseCh <- r.Response
